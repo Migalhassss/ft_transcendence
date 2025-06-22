@@ -13,15 +13,15 @@ app.register(jwt, {
   secret: process.env.JWT_SECRET as string,
 })
 
-// Rotas de autenticação (ex: /auth/login, /auth/register)
+// auth (ex: /auth/login, /auth/register)
 app.register(authRoutes, { prefix: '/auth' })
 
-// Teste simples
+// Test
 app.get('/ping', async () => {
   return { pong: true }
 })
 
-// Iniciar servidor
+// server
 app.listen({ port: 3000 }, (err, address) => {
   if (err) throw err
   console.log(`Servidor a correr em: ${address}`)
