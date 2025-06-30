@@ -3,41 +3,51 @@ import jwt from '@fastify/jwt'
 import dotenv from 'dotenv'
 import authRoutes from './routes/auth'
 import protectedRoutes from './routes/protected'
-import cors from '@fastify/cors'
+import websocket from '@fastify/websocket'
+import staticPlugin from '@fastify/static';
+import path from 'path';
+import { chatGateway } from './chat/chatGateway'
+
+
+
 
 dotenv.config()
 console.log('JWT_SECRET:', process.env.JWT_SECRET)
 
-async function start() {
-  const app = Fastify()
+console.log('JWT_SECRET:', process.env.JWT_SECRET)
 
-  // CORS
-  await app.register(cors, {
-    origin: '*', // só para dev
+async function buildServer() {
+  const app = Fastify({ logger: true})
+
+  app.register(staticPlugin, {
+    root: path.join(__dirname, '../../frontend'),
+    prefix: '/', // serve files at the root
+    index: 'index.html', // serve index.html for root
+  });
+
+  await app.register(websocket);
+
+  await app.register(jwt, {
+    secret: process.env.JWT_SECRET as string,                    // Plugin JWT
   })
+  
+  await app.register(chatGateway, { prefix: '/ws'});
+  await app.register(authRoutes, { prefix: '/auth' })            // auth (ex: /auth/login, /auth/register)
+  await app.register(protectedRoutes, { prefix: '/protected' })
 
-  // JWT
-  app.register(jwt, {
-    secret: process.env.JWT_SECRET as string,
-  })
-
-  // Routes
-  app.register(authRoutes, { prefix: '/auth' })
-  app.register(protectedRoutes, { prefix: '/protected' })
-
-  // Test route
   app.get('/ping', async () => {
-    return { pong: true }
+    return { pong: true }                                        // Test
   })
+  
+  app.ready().then(() => {
+    console.log(app.printRoutes());
+  });
 
-  // Start server
-  try {
-    const address = await app.listen({ port: 3000 })
-    console.log(`Servidor a correr em: ${address}`) 
-  } catch (err) {
-    app.log.error(err)
-    process.exit(1)
-  }
+  app.listen({ port: 3000 }, (err, address) => {
+      if (err) throw err                                        // server
+    console.log(`Servidor a correr em: ${address}`)
+  })
+  
 }
+buildServer();
 
-start()
