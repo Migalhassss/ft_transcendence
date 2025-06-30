@@ -3,28 +3,48 @@ import jwt from '@fastify/jwt'
 import dotenv from 'dotenv'
 import authRoutes from './routes/auth'
 import protectedRoutes from './routes/protected'
+import websocket from '@fastify/websocket'
+import staticPlugin from '@fastify/static';
+import path from 'path';
+import { chatGateway } from './chat/chatGateway'
+
+
 
 dotenv.config()
 
-const app = Fastify()
+console.log('JWT_SECRET:', process.env.JWT_SECRET)
 
-// Plugin JWT
-app.register(jwt, {
-  secret: process.env.JWT_SECRET as string,
-})
+async function buildServer() {
+  const app = Fastify({ logger: true})
 
-// auth (ex: /auth/login, /auth/register)
-app.register(authRoutes, { prefix: '/auth' })
+  app.register(staticPlugin, {
+    root: path.join(__dirname, '../../frontend'),
+    prefix: '/', // serve files at the root
+    index: 'index.html', // serve index.html for root
+  });
 
-// Test
-app.get('/ping', async () => {
-  return { pong: true }
-})
+  await app.register(websocket);
 
-// server
-app.listen({ port: 3000 }, (err, address) => {
-  if (err) throw err
-  console.log(`Servidor a correr em: ${address}`)
-})
+  await app.register(jwt, {
+    secret: process.env.JWT_SECRET as string,                    // Plugin JWT
+  })
+  
+  await app.register(chatGateway, { prefix: '/ws'});
+  await app.register(authRoutes, { prefix: '/auth' })            // auth (ex: /auth/login, /auth/register)
+  await app.register(protectedRoutes, { prefix: '/protected' })
 
-app.register(protectedRoutes, { prefix: '/protected' })
+  app.get('/ping', async () => {
+    return { pong: true }                                        // Test
+  })
+  
+  app.ready().then(() => {
+    console.log(app.printRoutes());
+  });
+
+  app.listen({ port: 3000 }, (err, address) => {
+      if (err) throw err                                        // server
+    console.log(`Servidor a correr em: ${address}`)
+  })
+  
+}
+buildServer();
