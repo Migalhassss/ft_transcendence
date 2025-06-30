@@ -22,7 +22,16 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
             data: savedMessage
           }));
         }
-        if (parsed.event === 'ping') {
+        else if (parsed.event === 'getPreviousMessages') {
+          const roomName = parsed.data.room;
+          const messages = fetchRoomMessages(roomName);
+    
+          socket.send(JSON.stringify({
+            event: 'previousMessages',
+            data: messages
+          }));
+        }
+        else if (parsed.event === 'ping') {
           socket.send(JSON.stringify({ event: 'pong' }));
         }
       } catch (err) {
