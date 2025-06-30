@@ -3,28 +3,41 @@ import jwt from '@fastify/jwt'
 import dotenv from 'dotenv'
 import authRoutes from './routes/auth'
 import protectedRoutes from './routes/protected'
+import cors from '@fastify/cors'
 
 dotenv.config()
+console.log('JWT_SECRET:', process.env.JWT_SECRET)
 
-const app = Fastify()
+async function start() {
+  const app = Fastify()
 
-// Plugin JWT
-app.register(jwt, {
-  secret: process.env.JWT_SECRET as string,
-})
+  // CORS
+  await app.register(cors, {
+    origin: '*', // só para dev
+  })
 
-// auth (ex: /auth/login, /auth/register)
-app.register(authRoutes, { prefix: '/auth' })
+  // JWT
+  app.register(jwt, {
+    secret: process.env.JWT_SECRET as string,
+  })
 
-// Test
-app.get('/ping', async () => {
-  return { pong: true }
-})
+  // Routes
+  app.register(authRoutes, { prefix: '/auth' })
+  app.register(protectedRoutes, { prefix: '/protected' })
 
-// server
-app.listen({ port: 3000 }, (err, address) => {
-  if (err) throw err
-  console.log(`Servidor a correr em: ${address}`)
-})
+  // Test route
+  app.get('/ping', async () => {
+    return { pong: true }
+  })
 
-app.register(protectedRoutes, { prefix: '/protected' })
+  // Start server
+  try {
+    const address = await app.listen({ port: 3000 })
+    console.log(`Servidor a correr em: ${address}`) 
+  } catch (err) {
+    app.log.error(err)
+    process.exit(1)
+  }
+}
+
+start()
