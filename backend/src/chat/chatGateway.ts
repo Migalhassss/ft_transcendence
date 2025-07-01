@@ -2,11 +2,26 @@ import { FastifyPluginAsync } from 'fastify';
 import { fetchRoomMessages, handleIncomingMessage } from './chatService';
 import { joinRoom, leaveRoom } from './messageStore'
 
-export const chatGateway: FastifyPluginAsync = async (fastify) => {
-  console.log('check');
+interface TokenPayload {
+  username: string;
+}
 
+export const chatGateway: FastifyPluginAsync = async (fastify) => {
   fastify.get('/chat', { websocket: true }, (socket, request) => {
-    console.log('WebSocket upgrade headers:', request.headers);
+    const url = new URL(request.url, 'http://localhost');
+    const token = url.searchParams.get('token');
+
+    let username = '';
+
+    try {
+      const payload = fastify.jwt.verify(token) as TokenPayload;
+      username = payload.username;
+      console.log(`User connected: ${username}`);
+    } catch (err) {
+      console.error('Invalid token');
+      socket.close();
+      return;
+    }
 
     socket.on('message', (raw) => {
       console.log('Received raw message:', raw.toString());

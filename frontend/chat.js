@@ -1,5 +1,6 @@
 window.addEventListener('DOMContentLoaded', () => {
-  const socket = new WebSocket('ws://localhost:3000/ws/chat');
+  const token = localStorage.getItem('jwtToken');  // or wherever you store your token
+  const socket = new WebSocket(`ws://localhost:3000/ws/chat?token=${token}`);
 
   const messagesDiv = document.getElementById('messages');
   const input = document.getElementById('messageInput');
