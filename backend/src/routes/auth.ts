@@ -13,8 +13,12 @@ export default async function (app: FastifyInstance) {
   app.post('/2fa/verify', { preValidation: [authenticate] }, verify2FA)
 
   app.get('/profile', { preValidation: [authenticate] }, async (req, reply) => {
-    const user = req.user as { username: string }
-    reply.send({ message: `Olá ${user.username}, este é o teu perfil!` })
+    const user = req.user as { id: number; username: string; email: string }
+    reply.send({
+      id: user.id,
+      username: user.username,
+      email: user.email
+    })
   })
 
 }

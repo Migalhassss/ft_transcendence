@@ -50,8 +50,8 @@ export async function googleAuth(req: FastifyRequest, reply: FastifyReply) {
     id: user.id,
     username: user.username,
     email: user.email,
-    requires2FA: false,
+    requires2FA: true,
   })
 
-  reply.send({ token, requires2FA: false })
+  reply.send({ token, requires2FA: true })
 }
