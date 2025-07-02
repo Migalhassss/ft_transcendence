@@ -21,7 +21,7 @@ async function buildServer() {
   app.register(staticPlugin, {
     root: path.join(__dirname, '../../frontend'),
     prefix: '/', // serve files at the root
-    index: 'index.html', // serve index.html for root
+    index: 'login.html', // serve index.html for root
   });
 
   await app.register(websocket);
@@ -30,8 +30,8 @@ async function buildServer() {
     secret: process.env.JWT_SECRET as string,                    // Plugin JWT
   })
   
-  await app.register(chatGateway, { prefix: '/ws'});
   await app.register(authRoutes, { prefix: '/auth' })            // auth (ex: /auth/login, /auth/register)
+  await app.register(chatGateway, { prefix: '/ws'});
   await app.register(protectedRoutes, { prefix: '/protected' })
 
   app.get('/ping', async () => {

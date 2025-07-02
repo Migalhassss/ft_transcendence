@@ -1,5 +1,8 @@
 window.addEventListener('DOMContentLoaded', () => {
-  const token = localStorage.getItem('jwtToken');  // or wherever you store your token
+  const token = localStorage.getItem('authToken');  // or wherever you store your token
+  if (!token) {
+    window.location.href = '/login.html';
+  }
   const socket = new WebSocket(`ws://localhost:3000/ws/chat?token=${token}`);
 
   const messagesDiv = document.getElementById('messages');

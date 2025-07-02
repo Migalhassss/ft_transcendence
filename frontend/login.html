@@ -68,6 +68,7 @@
       token = data.token
       data.requires2FA = true
       localStorage.setItem('authToken', token)  // guarda token no localStorage
+      window.location.href = 'chat.html';
 
       document.getElementById('status').innerText = 'Login feito!'
 
