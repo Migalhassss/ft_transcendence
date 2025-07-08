@@ -7,12 +7,12 @@ import websocket from '@fastify/websocket'
 import staticPlugin from '@fastify/static';
 import path from 'path';
 import { chatGateway } from './chat/chatGateway'
+import { pongGateway } from './game/pong'
 
 
 
 
 dotenv.config()
-console.log('JWT_SECRET:', process.env.JWT_SECRET)
 
 console.log('JWT_SECRET:', process.env.JWT_SECRET)
 
@@ -22,7 +22,13 @@ async function buildServer() {
   app.register(staticPlugin, {
     root: path.join(__dirname, '../../frontend'),
     prefix: '/', // serve files at the root
-    index: 'index.html', // serve index.html for root
+    index: 'login.html', // serve index.html for root
+  });
+
+  app.register(staticPlugin, {
+    root: path.join(__dirname, '../../frontend/dist'), // serve compiled JS files
+    prefix: '/dist/',                          // accessible via /dist/...
+    decorateReply: false,
   });
 
   await app.register(websocket);
@@ -31,9 +37,10 @@ async function buildServer() {
     secret: process.env.JWT_SECRET as string,                    // Plugin JWT
   })
   
-  await app.register(chatGateway, { prefix: '/ws'});
   await app.register(authRoutes, { prefix: '/auth' })            // auth (ex: /auth/login, /auth/register)
+  await app.register(chatGateway, { prefix: '/ws'});
   await app.register(protectedRoutes, { prefix: '/protected' })
+  await app.register(pongGateway, { prefix: '/game' });
 
   app.get('/ping', async () => {
     return { pong: true }                                        // Test

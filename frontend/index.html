@@ -1,95 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Chat Test</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      margin-top: 50px;
-    }
-    .chat-container {
-      width: 400px;
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 10px;
-    }
-    
-    .messages {
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid #eee;
-      padding: 10px;
-      margin-bottom: 10px;
-      background: #fafafa;
-    }
-    .message {
-      padding: 5px;
-      margin-bottom: 5px;
-      border-radius: 5px;
-      background-color: #e6f7ff;
-    }
-    .input-container {
-      display: flex;
-    }
-    input[type="text"] {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      padding: 8px 12px;
-      margin-left: 5px;
-      border: none;
-      background-color: #1890ff;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <title>Main Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="styles.css" rel="stylesheet" />
+  </head>
+  <body class="bg-gray-100 font-sans h-screen flex">
 
-    .saved-container {
-      margin-left: 20px;
-      width: 300px;
-    }
+    <!-- Sidebar -->
+    <aside class="w-64 text-white flex flex-col justify-between py-6 px-4">
+        <div>
+            <h2 class="text-2xl font-bold mb-8 text-center">🏓 Dashboard</h2>
+            <nav class="space-y-4">
+                    <button data-view="profile" class="nav-btn w-full text-left px-6 py-4 text-lg font-medium rounded hover:bg-gray-700">👤 Profile</button>
+                    <button data-view="matchmaking" class="nav-btn w-full text-left px-6 py-4 text-lg font-medium rounded hover:bg-gray-700">⚔️ Matchmaking</button>
+                    <button data-view="chat" class="nav-btn w-full text-left px-6 py-4 text-lg font-medium rounded hover:bg-gray-700">💬 Chat</button>            
+            </nav>
+        </div>
+        <button>
+            Logout
+        </button>
+    </aside>
+    <!-- Main Content -->
+    <main class="flex-1 bg-white p-6 overflow-y-auto">
+      <div id="profile" class="view">
+        <h1 class="text-2xl font-bold mb-4">👤 Profile</h1>
+        <p>Welcome, user! This is your profile page.</p>
+      </div>
 
-    #loadSavedBtn {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      background-color: #52c41a;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+      <div id="matchmaking" class="view">
+        <h1 class="text-2xl font-bold mb-4">⚔️ Matchmaking</h1>
+        <p>Matchmaking functionality will go here.</p>
+        <!-- You can embed your Pong canvas directly here later -->
+      </div>
 
-    .saved-messages {
-      border: 1px solid #eee;
-      background: #fffbe6;
-      height: 300px;
-      overflow-y: auto;
-      padding: 10px;
-      border-radius: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="chat-container">
-    <div class="messages" id="messages"></div>
-    <div class="input-container">
-      <input type="text" id="messageInput" placeholder="Type your message..." />
-      <button id="sendBtn">Send</button>
-    </div>
-  </div>
-  <div class="saved-container">
-    <button id="loadSavedBtn">Show Saved Messages</button>
-    <div class="saved-messages" id="savedMessages"></div>
-  </div>
-  
+      <div id="chat">
+        <h1 class="text-2xl font-bold mb-4"></h1>
+        <div id="chatContainer" class="view">
+          <!-- Chat UI from chat.ts will mount here -->
+        </div>
+      </div>
+    </main>
 
-  <script src="chat.js" defer></script>
-</body>
+    <script type="module" src="dist/main.js"></script>
+  </body>
 </html>
