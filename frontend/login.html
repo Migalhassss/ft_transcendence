@@ -43,7 +43,7 @@
   </div>
 
   <script>
-    let token = localStorage.getItem('authToken') || ''
+    let token = sessionStorage.getItem('authToken') || ''
 
     // Se já existir token, podes exibir que está logado
     if (token) {
@@ -67,8 +67,8 @@
 
       token = data.token
       data.requires2FA = true
-      localStorage.setItem('authToken', token)  // guarda token no localStorage
-      window.location.href = 'chat.html';
+      sessionStorage.setItem('authToken', token)  // guarda token no sessionStorage
+      window.location.href = 'index.html';
 
       document.getElementById('status').innerText = 'Login feito!'
 

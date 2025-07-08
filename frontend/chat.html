@@ -1,95 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Chat Test</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      margin-top: 50px;
-    }
-    .chat-container {
-      width: 400px;
-      border: 1px solid #ccc;
-      padding: 10px;
-      border-radius: 10px;
-    }
-    
-    .messages {
-      height: 300px;
-      overflow-y: auto;
-      border: 1px solid #eee;
-      padding: 10px;
-      margin-bottom: 10px;
-      background: #fafafa;
-    }
-    .message {
-      padding: 5px;
-      margin-bottom: 5px;
-      border-radius: 5px;
-      background-color: #e6f7ff;
-    }
-    .input-container {
-      display: flex;
-    }
-    input[type="text"] {
-      flex: 1;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      padding: 8px 12px;
-      margin-left: 5px;
-      border: none;
-      background-color: #1890ff;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+<div>
+  <ul id="roomList"></ul>
 
-    .saved-container {
-      margin-left: 20px;
-      width: 300px;
-    }
-
-    #loadSavedBtn {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      background-color: #52c41a;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    .saved-messages {
-      border: 1px solid #eee;
-      background: #fffbe6;
-      height: 300px;
-      overflow-y: auto;
-      padding: 10px;
-      border-radius: 10px;
-    }
-  </style>
-</head>
-<body>
-  <div class="chat-container">
-    <div class="messages" id="messages"></div>
-    <div class="input-container">
-      <input type="text" id="messageInput" placeholder="Type your message..." />
-      <button id="sendBtn">Send</button>
-    </div>
+  <div class="invite-button">
+    <button id="openAddFriend">Add Friend</button>
   </div>
-  <div class="saved-container">
-    <button id="loadSavedBtn">Show Saved Messages</button>
-    <div class="saved-messages" id="savedMessages"></div>
-  </div>
-  
 
-  <script src="chat.js" defer></script>
-</body>
-</html>
+  <div id="addFriendModal">
+    <input type="text" id="friendUsernameInput" placeholder="Enter friend's username" />
+    <button id="confirmAddFriend">Send Invite</button>
+  </div>
+</div>
+
+<div class="chat-container">
+  <div class="messages" id="messages"></div>
+  <div class="input-container">
+    <input type="text" id="messageInput" placeholder="Type your message..." />
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<div class="saved-container">
+  <button id="loadSavedBtn">Show Saved Messages</button>
+  <div class="saved-messages" id="savedMessages"></div>
+</div>

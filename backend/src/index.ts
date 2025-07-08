@@ -7,6 +7,7 @@ import websocket from '@fastify/websocket'
 import staticPlugin from '@fastify/static';
 import path from 'path';
 import { chatGateway } from './chat/chatGateway'
+import { pongGateway } from './game/pong'
 
 
 
@@ -24,6 +25,12 @@ async function buildServer() {
     index: 'login.html', // serve index.html for root
   });
 
+  app.register(staticPlugin, {
+    root: path.join(__dirname, '../../frontend/dist'), // serve compiled JS files
+    prefix: '/dist/',                          // accessible via /dist/...
+    decorateReply: false,
+  });
+
   await app.register(websocket);
 
   await app.register(jwt, {
@@ -33,6 +40,7 @@ async function buildServer() {
   await app.register(authRoutes, { prefix: '/auth' })            // auth (ex: /auth/login, /auth/register)
   await app.register(chatGateway, { prefix: '/ws'});
   await app.register(protectedRoutes, { prefix: '/protected' })
+  await app.register(pongGateway, { prefix: '/game' });
 
   app.get('/ping', async () => {
     return { pong: true }                                        // Test

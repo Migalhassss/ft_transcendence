@@ -11,14 +11,14 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     const data = await res.json();
   
     if (data.token) {
-      localStorage.setItem('authToken', data.token); // 🔐 Save JWT token
+      sessionStorage.setItem('authToken', data.token); // 🔐 Save JWT token
   
       if (data.requires2FA) {
         // Redirect to 2FA if needed
         window.location.href = '/2fa.html';
       } else {
         // Redirect to chat or main page
-        window.location.href = '/chat.html';
+        window.location.href = '/index.html';
       }
     } else {
       alert('Login failed.');
