@@ -23,7 +23,7 @@ navButtons.forEach((btn) => {
                     chatContainer.innerHTML = html;
                     chatContainer.dataset.loaded = 'true';
                     const script = document.createElement('script');
-                    script.src = 'chat.js';
+                    script.src = '/dist/chat.js';
                     script.defer = true;
                     document.body.appendChild(script);
                     const hideElements = chatContainer.querySelectorAll('#roomList, .invite-button, #addFriendModal, .chat-container, .saved-container');
