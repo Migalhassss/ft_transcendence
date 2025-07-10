@@ -1,4 +1,4 @@
-"use strict";
+import { addNotification } from './main.js';
 (() => {
     const token = sessionStorage.getItem('authToken');
     let username = '';
@@ -47,8 +47,12 @@
         return;
     }
     openAddFriendBtn.addEventListener('click', () => {
-        addFriendModal.style.display = 'block';
-        friendUsernameInput.focus();
+        if (addFriendModal.style.display === 'block')
+            addFriendModal.style.display = 'none';
+        else {
+            addFriendModal.style.display = 'block';
+            friendUsernameInput.focus();
+        }
     });
     confirmAddFriendBtn.addEventListener('click', () => {
         const friendUsername = friendUsernameInput.value.trim();
@@ -99,18 +103,27 @@
             });
             setupRoomListeners();
         }
-        else if (msg.event === 'friendAdded') {
-            alert(`Friend added: ${msg.data.username}`);
+        else if (msg.event === 'requestingFriend') {
+            console.log("inviting friend");
+            addNotification(`${msg.data.username} has sent you a friend request.`, () => {
+                socket.send(JSON.stringify({
+                    event: 'respondFriendInvite',
+                    data: { from: msg.data.username, accepted: true }
+                }));
+                alert(`Friend added: ${msg.data.username}`);
+            }, () => {
+                socket.send(JSON.stringify({
+                    event: 'respondFriendInvite',
+                    data: { from: msg.data.username, accepted: false }
+                }));
+            });
         }
-        else if (msg.event === 'friendInvite') {
-            const fromUser = msg.data.from;
-            // Show your custom friend invite modal/pop-up here
-            if (confirm(`${fromUser} sent you a friend request. Accept?`)) {
-                socket.send(JSON.stringify({ event: 'respondFriendInvite', data: { from: fromUser, accepted: true } }));
-            }
-            else {
-                socket.send(JSON.stringify({ event: 'respondFriendInvite', data: { from: fromUser, accepted: false } }));
-            }
+        else if (msg.event === 'addingFriend') {
+            alert("your friend request was accepted");
+            addRoomOrFriend(`@${msg.data.username}`, true);
+        }
+        else if (msg.event === 'friendInviteDeclined') {
+            alert("your friend request was denied");
         }
     };
     socket.onerror = (error) => {
@@ -167,6 +180,32 @@
                     }));
                 }
             });
+        });
+    }
+    function addRoomOrFriend(label, isFriend) {
+        const roomList = document.getElementById('roomList');
+        if (!roomList)
+            return;
+        // Prevent duplicates
+        const existing = Array.from(roomList.children).find((child) => child.dataset.room === label);
+        if (existing)
+            return;
+        const li = document.createElement('li');
+        li.dataset.room = label;
+        li.textContent = isFriend ? `@ ${label.replace('@', '')}` : `# ${label}`;
+        roomList.appendChild(li);
+        li.addEventListener('click', () => {
+            const roomItems = document.querySelectorAll('#roomList li');
+            roomItems.forEach((i) => i.classList.remove('active'));
+            li.classList.add('active');
+            currentRoom = label;
+            if (messagesDiv) {
+                messagesDiv.innerHTML = '';
+            }
+            socket.send(JSON.stringify({
+                event: 'joinRoom',
+                data: { room: currentRoom },
+            }));
         });
     }
 })();
