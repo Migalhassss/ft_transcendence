@@ -1,19 +1,23 @@
 import { FastifyPluginAsync } from 'fastify';
 import { fetchRoomMessages, handleIncomingMessage } from './chatService';
-import { joinRoom, leaveRoom } from './messageStore'
+import { joinRoom, leaveRoom } from './messageStore';
 
 interface TokenPayload {
   username: string;
 }
 
-const userSocketMap = new Map<string, WebSocket>();
-
 type friendsAndRooms = {
-  friends : string[];
-  rooms : string[];
+  friends: string[];
+  rooms: string[];
 };
 
+const userSocketMap = new Map<string, WebSocket>();
 const userChannels = new Map<WebSocket, friendsAndRooms>();
+
+// Optional: WebSocket type augmentation (if needed for TS)
+interface ExtendedWebSocket extends WebSocket {
+  username?: string;
+}
 
 export const chatGateway: FastifyPluginAsync = async (fastify) => {
   fastify.get('/chat', { websocket: true }, (socket, request) => {
@@ -25,7 +29,7 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
     try {
       const payload = fastify.jwt.verify(token) as TokenPayload;
       username = payload.username;
-      (socket as any).username = username;
+      (socket as ExtendedWebSocket).username = username;
       console.log(`User connected: ${username}`);
     } catch (err) {
       console.error('Invalid token');
@@ -37,99 +41,122 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
 
     socket.on('message', (raw) => {
       console.log('Received raw message:', raw.toString());
+
       try {
         const parsed = JSON.parse(raw.toString());
 
-        if (parsed.event === 'message') {
-          const savedMessage = handleIncomingMessage(parsed.data);
-          console.log('Processed message:', savedMessage);
+        switch (parsed.event) {
+          case 'message': {
+            const savedMessage = handleIncomingMessage(parsed.data);
+            const room = parsed.data.room;
+          
+            for (const [clientSocket, data] of userChannels.entries()) {
+              const userRooms = data.rooms || [];
+              const userFriends = data.friends || [];
+          
+              // Match for public room (#room) or private (@username)
+              const isInRoom =
+                userRooms.includes(room) || userFriends.includes(room.replace(/^@/, ''));
+          
+              if (isInRoom) {
+                clientSocket.send(JSON.stringify({ event: 'message', data: savedMessage }));
+              }
+            }          
+            break;
+          }
 
-          socket.send(JSON.stringify({
-            event: 'message',
-            data: savedMessage
-          }));
-        }
-        else if (parsed.event === 'getPreviousMessages') {
-          const roomName = parsed.data.room;
-          const messages = fetchRoomMessages(roomName);
-    
-          socket.send(JSON.stringify({
-            event: 'previousMessages',
-            data: messages
-          }));
-        } else if (parsed.event === 'getUserRoomsAndFriends') {
-          const username = socket.username; // <-- from decoded JWT or session
-      
-          // Fetch rooms and friends from DB
-          const rooms = getRoomsForUser(username, socket);
-          const friends = getFriendsForUser(username);
-      
-          // Send back to client
-          socket.send(JSON.stringify({
-            event: 'userRooms',
-            data: {
-              rooms,
-              friends
-            }
-          }));
-        }
-        else if (parsed.event === 'addFriend') {
-          const requester = (socket as any).username;
-          const friendUsername = parsed.data.friendUsername;
-        
-          const requesterData = userChannels.get(socket) ?? { friends: [], rooms: [] };
-          if (!requesterData.friends.includes(friendUsername)) {
-            requesterData.friends.push(friendUsername);
+          case 'getPreviousMessages': {
+            const roomName = parsed.data.room;
+            const messages = fetchRoomMessages(roomName);
+            socket.send(JSON.stringify({ event: 'previousMessages', data: messages }));
+            break;
           }
-          userChannels.set(socket, requesterData);
-        
-          socket.send(JSON.stringify({
-            event: 'friendAdded',
-            data: { username: friendUsername }
-          }));
-        
-          const friendSocket = userSocketMap.get(friendUsername);
-          if (friendSocket) {
-            const friendData = userChannels.get(friendSocket) ?? { friends: [], rooms: [] };
-            if (!friendData.friends.includes(requester)) {
-              friendData.friends.push(requester);
-            }
-            userChannels.set(friendSocket, friendData);
-        
-            friendSocket.send(JSON.stringify({
-              event: 'friendAdded',
-              data: { username: requester }
-            }));
+
+          case 'getUserRoomsAndFriends': {
+            const username = (socket as ExtendedWebSocket).username!;
+            const rooms = getRoomsForUser(username, socket);
+            const friends = getFriendsForUser(socket);
+            socket.send(JSON.stringify({ event: 'userRooms', data: { rooms, friends } }));
+            break;
           }
-        }
-        else if (parsed.event === 'ping') {
-          socket.send(JSON.stringify({ event: 'pong' }));
-        }
-        else if (parsed.event === 'joinRoom') {
-          const roomName = parsed.data.room;
-          joinRoom(socket, roomName);
-        
-          const messages = fetchRoomMessages(roomName);
-          socket.send(JSON.stringify({
-            event: 'previousMessages',
-            data: messages
-          }));
-        }
-        else if(parsed.event === 'leaveRoom') {
-          const roomName = parsed.data.room;
-          leaveRoom(socket, roomName);
+
+          case 'addFriend': {
+            const requester = (socket as ExtendedWebSocket).username!;
+            const friendUsername = parsed.data.friendUsername;
+            const friendSocket = userSocketMap.get(friendUsername);
+
+            if (!friendSocket) {
+              console.log('No such person exists:', friendUsername);
+              return;
+            }
+
+            addFriendToUser(socket, friendUsername);
+            socket.send(JSON.stringify({ event: 'friendAdded', data: { username: friendUsername } }));
+
+            addFriendToUser(friendSocket, requester);
+            friendSocket.send(JSON.stringify({ event: 'friendAdded', data: { username: requester } }));
+            break;
+          }
+
+          case 'respondFriendInvite': {
+            const responder = (socket as ExtendedWebSocket).username!;
+            const { from, accepted } = parsed.data;
+            const fromSocket = userSocketMap.get(from);
+          
+            if (!fromSocket) {
+              socket.send(JSON.stringify({ event: 'error', data: { message: 'User not found' } }));
+              return;
+            }
+          
+            if (accepted) {
+              addFriendToUser(socket, from);     // Add friend to responder's friend list
+              addFriendToUser(fromSocket, responder);  // Add responder to requester's friend list
+          
+              // Notify both users
+              socket.send(JSON.stringify({ event: 'friendAdded', data: { username: from } }));
+              fromSocket.send(JSON.stringify({ event: 'friendAdded', data: { username: responder } }));
+            } else {
+              // Notify requester that invite was declined
+              fromSocket.send(JSON.stringify({ event: 'friendInviteDeclined', data: { username: responder } }));
+            }
+            break;
+          }
+
+          case 'ping': {
+            socket.send(JSON.stringify({ event: 'pong' }));
+            break;
+          }
+
+          case 'joinRoom': {
+            const roomName = parsed.data.room;
+            joinRoom(socket, roomName);
+            const messages = fetchRoomMessages(roomName);
+            socket.send(JSON.stringify({ event: 'previousMessages', data: messages }));
+            break;
+          }
+
+          case 'leaveRoom': {
+            const roomName = parsed.data.room;
+            leaveRoom(socket, roomName);
+            break;
+          }
+
+          default: {
+            console.warn('Unknown event:', parsed.event);
+            socket.send(JSON.stringify({ event: 'error', data: 'Unknown event type' }));
+            break;
+          }
         }
       } catch (err) {
         console.error('Failed to parse message:', err);
-        socket.send(JSON.stringify({
-          event: 'error',
-          data: 'Invalid message format'
-        }));
+        socket.send(JSON.stringify({ event: 'error', data: 'Invalid message format' }));
       }
     });
 
     socket.on('close', () => {
-      console.log('Client disconnected');
+      console.log(`Client ${username} disconnected`);
+      userSocketMap.delete(username);
+      userChannels.delete(socket);
     });
 
     socket.on('error', (error) => {
@@ -143,21 +170,24 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
 };
 
 function getRoomsForUser(username: string, socket: WebSocket): string[] {
-  // Start everyone with "general"
   const entry = userChannels.get(socket);
 
-  if (entry) {
-    return entry.rooms;
-  }
+  if (entry) return entry.rooms;
 
-  // If not already set, default to ["general"]
   const defaultRooms = ['general'];
   userChannels.set(socket, { rooms: defaultRooms, friends: [] });
   return defaultRooms;
-};
+}
 
 function getFriendsForUser(socket: WebSocket): string[] {
   const entry = userChannels.get(socket);
   return entry?.friends ?? [];
-};
+}
 
+function addFriendToUser(socket: WebSocket, friendUsername: string) {
+  const data = userChannels.get(socket) ?? { friends: [], rooms: [] };
+  if (!data.friends.includes(friendUsername)) {
+    data.friends.push(friendUsername);
+  }
+  userChannels.set(socket, data);
+}

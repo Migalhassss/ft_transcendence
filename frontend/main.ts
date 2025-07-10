@@ -16,7 +16,7 @@ navButtons.forEach((btn) => {
           chatContainer.dataset.loaded = 'true';
 
           const script = document.createElement('script');
-          script.src = 'chat.js';
+          script.src = '/dist/chat.js';
           script.defer = true;
           document.body.appendChild(script);
           const hideElements = chatContainer.querySelectorAll(
@@ -35,6 +35,7 @@ navButtons.forEach((btn) => {
         '#roomList',
         '.invite-button',
         '#addFriendModal',
+        '#chatContainer',
         '.chat-container',
         '.saved-container'
       ];
