@@ -9,10 +9,11 @@ interface TokenPayload {
 type friendsAndRooms = {
   friends: string[];
   rooms: string[];
+  currentRoom?: string;
 };
 
 const userSocketMap = new Map<string, WebSocket>();
-const userChannels = new Map<WebSocket, friendsAndRooms>();
+export const userChannels = new Map<WebSocket, friendsAndRooms>();
 
 // Optional: WebSocket type augmentation (if needed for TS)
 interface ExtendedWebSocket extends WebSocket {
@@ -58,7 +59,7 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
               const isInRoom =
                 userRooms.includes(room) || userFriends.includes(room.replace(/^@/, ''));
           
-              if (isInRoom) {
+              if (isInRoom && data.currentRoom === room) {
                 clientSocket.send(JSON.stringify({ event: 'message', data: savedMessage }));
               }
             }          
@@ -84,17 +85,13 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
             const requester = (socket as ExtendedWebSocket).username!;
             const friendUsername = parsed.data.friendUsername;
             const friendSocket = userSocketMap.get(friendUsername);
-
+            
             if (!friendSocket) {
               console.log('No such person exists:', friendUsername);
               return;
             }
 
-            addFriendToUser(socket, friendUsername);
-            socket.send(JSON.stringify({ event: 'friendAdded', data: { username: friendUsername } }));
-
-            addFriendToUser(friendSocket, requester);
-            friendSocket.send(JSON.stringify({ event: 'friendAdded', data: { username: requester } }));
+            friendSocket.send(JSON.stringify({ event: 'requestingFriend', data: { username: requester } }));
             break;
           }
 
@@ -109,12 +106,13 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
             }
           
             if (accepted) {
+              console.log(from);
               addFriendToUser(socket, from);     // Add friend to responder's friend list
               addFriendToUser(fromSocket, responder);  // Add responder to requester's friend list
           
               // Notify both users
-              socket.send(JSON.stringify({ event: 'friendAdded', data: { username: from } }));
-              fromSocket.send(JSON.stringify({ event: 'friendAdded', data: { username: responder } }));
+              socket.send(JSON.stringify({ event: 'addingFriend', data: { username: from } }));
+              fromSocket.send(JSON.stringify({ event: 'addingFriend', data: { username: responder } }));
             } else {
               // Notify requester that invite was declined
               fromSocket.send(JSON.stringify({ event: 'friendInviteDeclined', data: { username: responder } }));

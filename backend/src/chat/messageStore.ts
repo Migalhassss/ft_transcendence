@@ -1,3 +1,6 @@
+import { userChannels } from './chatGateway';
+
+
 type Message = {
     user: string
     room: string
@@ -29,6 +32,11 @@ type Message = {
       rooms.set(roomName, new Set());
     }
     rooms.get(roomName)!.add(socket);
+    const userData = userChannels.get(socket);
+    if (userData) {
+      userData.currentRoom = roomName;
+      userChannels.set(socket, userData);
+    }
   }
   
   // Remove a socket from a room
