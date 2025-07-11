@@ -236,5 +236,67 @@ body {
   margin-bottom: 0;
 }
 
-  
-  
+/* Matchmaking View */
+#matchmakingView {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb; /* Tailwind's border-gray-200 */
+  border-radius: 0.5rem; /* rounded-lg */
+  padding: 1.5rem; /* p-6 */
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* subtle shadow */
+}
+
+/* Matchmaking Status Text */
+#matchStatus {
+  font-size: 1rem;
+  color: #4b5563; /* Tailwind's text-gray-700 */
+  margin-bottom: 1rem;
+}
+
+/* Match Result Message */
+#matchResult {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #10b981; /* Tailwind's text-green-500 */
+  margin-top: 1rem;
+}
+
+/* Matchmaking Buttons */
+#startMatchmaking,
+#cancelMatchmaking {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-right: 0.5rem;
+}
+
+#startMatchmaking {
+  background-color: #3b82f6; /* Tailwind's blue-500 */
+  color: white;
+}
+
+#startMatchmaking:hover {
+  background-color: #2563eb; /* blue-600 */
+}
+
+#cancelMatchmaking {
+  background-color: #ef4444; /* Tailwind's red-500 */
+  color: white;
+}
+
+#cancelMatchmaking:hover {
+  background-color: #dc2626; /* red-600 */
+}
+
+/* Game Container (hidden initially) */
+#gameContainer {
+  margin-top: 2rem;
+  background-color: #f9fafb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}

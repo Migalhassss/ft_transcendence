@@ -1,6 +1,7 @@
 const navButtons = document.querySelectorAll('.nav-btn');
 const views = document.querySelectorAll('.view');
 const chatContainer = document.getElementById('chatContainer');
+const matchmaking = document.getElementById('matchmaking')
 
 navButtons.forEach((btn) => {
   btn.addEventListener('click', async () => {
@@ -8,9 +9,36 @@ navButtons.forEach((btn) => {
     if (target === 'profile'){
 
     }
-    else if (target === 'matchmaking'){
-
-    }
+    else if (target === 'matchmaking') {
+      if (matchmaking && !matchmaking.dataset.loaded) {
+        try {
+          const res = await fetch('matchmaking.html');
+          const html = await res.text();
+    
+          // Extract inner HTML manually (remove script tag from HTML)
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = html;
+    
+          // Remove any inline <script> tags that don't execute anyway
+          tempDiv.querySelectorAll('script').forEach(script => script.remove());
+    
+          matchmaking.innerHTML = `<div class="inner-matchmaking">${tempDiv.innerHTML}</div>`;
+          matchmaking.dataset.loaded = 'true';
+    
+          console.log("✅ Matchmaking HTML injected");
+    
+          // Now dynamically load and execute matchmaking.js
+          const script = document.createElement('script');
+          script.src = '/dist/matchmaking.js';  // Make sure this is the correct path
+          script.type = 'module';  // Assuming you're using ES modules
+          script.defer = true;
+          document.body.appendChild(script);
+    
+        } catch (err) {
+          console.error('❌ Failed to load matchmaking.html or matchmaking.js:', err);
+        }
+      }
+    }    
     else if (target === 'chat') {
       // Load chat.html ONCE
       if (chatContainer && !chatContainer.dataset.loaded) {

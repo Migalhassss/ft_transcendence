@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { fetchRoomMessages, handleIncomingMessage } from './chatService';
+import { saveMessage } from './messageStore';
 import { joinRoom, leaveRoom } from './messageStore';
 
 interface TokenPayload {
@@ -50,19 +51,20 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
           case 'message': {
             const savedMessage = handleIncomingMessage(parsed.data);
             const room = parsed.data.room;
-          
+            
             for (const [clientSocket, data] of userChannels.entries()) {
-              const userRooms = data.rooms || [];
-              const userFriends = data.friends || [];
-          
-              // Match for public room (#room) or private (@username)
-              const isInRoom =
-                userRooms.includes(room) || userFriends.includes(room.replace(/^@/, ''));
-          
-              if (isInRoom && data.currentRoom === room) {
+              const clientUsername = (clientSocket as ExtendedWebSocket).username;
+            
+              const isDM = room.startsWith('@');
+              const isCurrentRoom = data.currentRoom === room;
+
+              const isDirectMessageToUser = room === `@${clientUsername}`;
+              if (isDirectMessageToUser)
+                  saveMessage(`@${parsed.data.user}`, parsed.data);
+              if ((!isDM && isCurrentRoom) || (isDM && ((isDirectMessageToUser && data.currentRoom === `@${parsed.data.user}` ) || clientUsername === parsed.data.user))) {
                 clientSocket.send(JSON.stringify({ event: 'message', data: savedMessage }));
               }
-            }          
+            }
             break;
           }
 
@@ -128,10 +130,25 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
           case 'joinRoom': {
             const roomName = parsed.data.room;
             joinRoom(socket, roomName);
+          
+            const currentUsername = (socket as ExtendedWebSocket).username!;
             const messages = fetchRoomMessages(roomName);
-            socket.send(JSON.stringify({ event: 'previousMessages', data: messages }));
+          
+            const senders = Array.from(new Set(messages.map((msg) => msg.user))).sort();
+            const isUserAllowedInDM = senders.includes(currentUsername);
+            const roomFromSenders = `@${senders.join(' ')}`; // Join with space instead of -
+          
+            const participants = roomName.replace(/^@/, '').split(' ');
+            const isInRoomName = participants.includes(currentUsername);
+          
+            console.log(roomName);
+            if (!roomName.startsWith('@') || isUserAllowedInDM || roomName === roomFromSenders || isInRoomName) {
+              socket.send(JSON.stringify({ event: 'previousMessages', data: messages }));
+            }
+          
             break;
           }
+          
 
           case 'leaveRoom': {
             const roomName = parsed.data.room;
@@ -173,7 +190,11 @@ function getRoomsForUser(username: string, socket: WebSocket): string[] {
   if (entry) return entry.rooms;
 
   const defaultRooms = ['general'];
-  userChannels.set(socket, { rooms: defaultRooms, friends: [] });
+  userChannels.set(socket, {
+    rooms: defaultRooms,
+    friends: [],
+    currentRoom: 'general',
+  });
   return defaultRooms;
 }
 
