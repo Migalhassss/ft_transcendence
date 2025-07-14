@@ -1,7 +1,8 @@
-export default function initGame(canvas: HTMLCanvasElement) {
+export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
+  console.log("check");
   const ctx = canvas.getContext("2d")!;
   const GAME_WIDTH = 600;
-  const GAME_HEIGHT = 400;
+  const GAME_HEIGHT = 2000;
 
   function resizeCanvas() {
     canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
@@ -11,13 +12,6 @@ export default function initGame(canvas: HTMLCanvasElement) {
   window.addEventListener("resize", resizeCanvas);
   resizeCanvas();
 
-  const token = localStorage.getItem("authToken");
-  if (!token) {
-    alert("No auth token found. Please log in.");
-    throw new Error("Missing auth token");
-  }
-
-  const socket = new WebSocket(`ws://localhost:3000/game/pong?token=${token}`);
   let currentDirection: 'up' | 'down' | 'stop' = 'stop';
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -68,10 +62,9 @@ export default function initGame(canvas: HTMLCanvasElement) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scaleX = canvas.width / GAME_WIDTH;
     const scaleY = canvas.height / GAME_HEIGHT;
-
-    ctx.fillStyle = "white";
-
-    // Ball
+  
+    // Draw ball (red)
+    ctx.fillStyle = 'red';
     ctx.beginPath();
     ctx.arc(
       gameState.ball.x * scaleX,
@@ -81,27 +74,29 @@ export default function initGame(canvas: HTMLCanvasElement) {
       Math.PI * 2
     );
     ctx.fill();
-
-    // Paddles
+  
+    // Draw paddles (green)
+    ctx.fillStyle = 'green';
     ctx.fillRect(
       10 * scaleX,
       gameState.paddles.left * scaleY,
       10 * scaleX,
-      80 * scaleY
+      150 * scaleY
     );
-
+  
     ctx.fillRect(
       (GAME_WIDTH - 20) * scaleX,
       gameState.paddles.right * scaleY,
       10 * scaleX,
-      80 * scaleY
+      150 * scaleY
     );
-
-    // Score
+  
+    // Draw score (white)
+    ctx.fillStyle = "white";
     ctx.font = `${20 * ((scaleX + scaleY) / 2)}px Arial`;
     ctx.fillText(`${gameState.scores.left}`, canvas.width / 3, 40);
     ctx.fillText(`${gameState.scores.right}`, (2 * canvas.width) / 3, 40);
-  }
+  }  
 
   // Optional cleanup you can return
   return () => {

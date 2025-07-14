@@ -23,7 +23,7 @@ import { addNotification } from './main.js';
         throw new Error('Token not found. Redirecting...');
     }
     const payload = parseJwt(token);
-    if (payload === null || payload === void 0 ? void 0 : payload.username) {
+    if (payload?.username) {
         username = payload.username;
         console.log('Logged in as:', username);
     }

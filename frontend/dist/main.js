@@ -1,38 +1,27 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 const navButtons = document.querySelectorAll('.nav-btn');
 const views = document.querySelectorAll('.view');
 const chatContainer = document.getElementById('chatContainer');
 const matchmaking = document.getElementById('matchmaking');
 navButtons.forEach((btn) => {
-    btn.addEventListener('click', () => __awaiter(void 0, void 0, void 0, function* () {
+    btn.addEventListener('click', async () => {
         const target = btn.getAttribute('data-view');
         if (target === 'profile') {
         }
         else if (target === 'matchmaking') {
+            // Load matchmaking.html + matchmaking.js only once
             if (matchmaking && !matchmaking.dataset.loaded) {
                 try {
-                    const res = yield fetch('matchmaking.html');
-                    const html = yield res.text();
-                    // Extract inner HTML manually (remove script tag from HTML)
+                    const res = await fetch('matchmaking.html');
+                    const html = await res.text();
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = html;
-                    // Remove any inline <script> tags that don't execute anyway
                     tempDiv.querySelectorAll('script').forEach(script => script.remove());
                     matchmaking.innerHTML = `<div class="inner-matchmaking">${tempDiv.innerHTML}</div>`;
                     matchmaking.dataset.loaded = 'true';
                     console.log("✅ Matchmaking HTML injected");
-                    // Now dynamically load and execute matchmaking.js
                     const script = document.createElement('script');
-                    script.src = '/dist/matchmaking.js'; // Make sure this is the correct path
-                    script.type = 'module'; // Assuming you're using ES modules
+                    script.src = '/dist/matchmaking.js';
+                    script.type = 'module';
                     script.defer = true;
                     document.body.appendChild(script);
                 }
@@ -40,13 +29,28 @@ navButtons.forEach((btn) => {
                     console.error('❌ Failed to load matchmaking.html or matchmaking.js:', err);
                 }
             }
+            // ✅ Toggle matchmaking sub-elements
+            const toggleElements = [
+                '#matchmakingView',
+                '#startMatchmaking',
+                '#matchStatus',
+                '#cancelMatchmaking'
+            ];
+            toggleElements.forEach((selector) => {
+                const el = matchmaking?.querySelector(selector);
+                if (el) {
+                    const isHidden = getComputedStyle(el).display === 'none';
+                    el.style.display = isHidden ? 'block' : 'none';
+                }
+            });
+            return; // Prevent default view-switch logic
         }
         else if (target === 'chat') {
             // Load chat.html ONCE
             if (chatContainer && !chatContainer.dataset.loaded) {
                 try {
-                    const res = yield fetch('chat.html');
-                    const html = yield res.text();
+                    const res = await fetch('chat.html');
+                    const html = await res.text();
                     chatContainer.innerHTML = html;
                     chatContainer.dataset.loaded = 'true';
                     const script = document.createElement('script');
@@ -65,6 +69,7 @@ navButtons.forEach((btn) => {
             }
             // Toggle visibility of chat sub-elements
             const toggleElements = [
+                '#chat',
                 '#roomList',
                 '.invite-button',
                 '#addFriendModal',
@@ -72,7 +77,7 @@ navButtons.forEach((btn) => {
                 '.chat-container'
             ];
             toggleElements.forEach((selector) => {
-                const el = chatContainer === null || chatContainer === void 0 ? void 0 : chatContainer.querySelector(selector);
+                const el = chatContainer?.querySelector(selector);
                 if (el) {
                     const isHidden = getComputedStyle(el).display === 'none';
                     el.style.display = isHidden ? 'block' : 'none';
@@ -93,13 +98,13 @@ navButtons.forEach((btn) => {
                 el.style.display = 'none';
             });
         }
-    }));
+    });
 });
 // Get references to DOM elements
 const toggleBtn = document.getElementById('toggleNotifications');
 const notificationPanel = document.getElementById('notificationsPanel');
 // Toggle logic for the 🔔 button
-toggleBtn === null || toggleBtn === void 0 ? void 0 : toggleBtn.addEventListener('click', () => {
+toggleBtn?.addEventListener('click', () => {
     if (!notificationPanel) {
         console.log("no notification Panel");
         return;

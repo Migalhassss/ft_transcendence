@@ -8,7 +8,24 @@ export function initMatchmaking() {
     const statusText = document.getElementById('matchStatus')!;
     const matchResult = document.getElementById('matchResult')!;
     const gameContainer = document.getElementById('gameContainer')!;
-    const matchmakingView = document.getElementById('matchmakingView')!;
+    const matchmaking = document.getElementById('matchmaking')
+    const chatContainer = document.getElementById('chatContainer');
+  
+    const toggleElementsChat = [
+      '#chat',
+      '#roomList',
+      '.invite-button',
+      '#addFriendModal',
+      '#chatContainer',
+      '.chat-container'
+    ];
+
+    const toggleElements = [
+      '#matchmakingView',
+      '#startMatchmaking',
+      '#matchStatus',
+      '#cancelMatchmaking'
+    ];
   
     if (!startBtn || !cancelBtn) {
       console.warn("Matchmaking buttons not found.");
@@ -38,14 +55,34 @@ export function initMatchmaking() {
         if (data.type === 'start') {
           console.log('🎮 Match found, starting game...');
           matchResult.textContent = `✅ Match found! You are playing as ${data.role}`;
-          matchResult.classList.remove('hidden');
+          // matchResult.classList.remove('hidden');
   
-          matchmakingView.classList.add('hidden');
-  
+          // matchmakingView.classList.add('hidden');
+          toggleElements.forEach((selector) => {
+            const el = matchmaking?.querySelector(selector) as HTMLElement;
+            if (el) {
+              const isHidden = getComputedStyle(el).display === 'none';
+              el.style.display = isHidden ? 'block' : 'none';
+            }
+          });
+          toggleElementsChat.forEach((selector) => {
+            const el = chatContainer?.querySelector(selector) as HTMLElement;
+            if (el) {
+              const isHidden = getComputedStyle(el).display === 'none';
+              el.style.display = isHidden ? 'block' : 'none';
+            }
+          });
           const res = await fetch('game.html');
           const html = await res.text();
           gameContainer.innerHTML = html;
           gameContainer.classList.remove('hidden');
+
+          const canvas = gameContainer.querySelector('#gameCanvas') as HTMLCanvasElement;
+          if (canvas) {
+            const { default: initGame } = await import('./game.js')as any;
+            console.log("check2");
+            initGame(canvas, socket);            
+          }
         }
       };
   
@@ -73,4 +110,5 @@ export function initMatchmaking() {
       matchResult.classList.add('hidden');
     }
   }
-  
+
+  initMatchmaking();

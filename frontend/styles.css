@@ -1,6 +1,6 @@
 /* General Layout */
 body {
-    background-color: #f3f4f6; /* Tailwind's bg-gray-100 */
+    background-color: black; /* Tailwind's bg-gray-100 */
     font-family: sans-serif;
     height: 100vh;
     margin: 0;
@@ -65,12 +65,13 @@ body {
   /* Main Content Area */
   main {
     flex: 1;
-    background-color: white;
+    background-color: black;
     padding: 1.5rem; /* p-6 */
     overflow-y: auto;
   }
   
   main h1 {
+    background-color: black;
     font-size: 1.5rem;
     font-weight: bold;
     margin-bottom: 1rem;
@@ -88,13 +89,11 @@ body {
 
   /* Chat styles */
 #chatContainer {
+    background-color: rgb(124, 7, 79);
     display: flex;
-    height: 900px;
+    height: 100%;
     gap: 200px;
     font-family: sans-serif;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    background-color: #f0f0f0;
   }
   
   #roomList {
@@ -238,11 +237,11 @@ body {
 
 /* Matchmaking View */
 #matchmakingView {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb; /* Tailwind's border-gray-200 */
+  background-color: #e73939;
+  border: 1px solid #ac1d6c; /* Tailwind's border-gray-200 */
   border-radius: 0.5rem; /* rounded-lg */
   padding: 1.5rem; /* p-6 */
-  max-width: 600px;
+  max-width: 100%;
   margin: 0 auto;
   box-shadow: 0 4px 6px rgba(0,0,0,0.05); /* subtle shadow */
 }
@@ -296,7 +295,13 @@ body {
 /* Game Container (hidden initially) */
 #gameContainer {
   margin-top: 2rem;
-  background-color: #f9fafb;
+  background-color: black;
   border-radius: 0.5rem;
   padding: 1rem;
+  height: 100%;
+}
+
+#pongGameWrapper {
+  width: 600px;
+  height: 600px;
 }

@@ -1,12 +1,3 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 export function initMatchmaking() {
     console.log("🔁 Initializing matchmaking setup");
     let socket = null;
@@ -15,7 +6,22 @@ export function initMatchmaking() {
     const statusText = document.getElementById('matchStatus');
     const matchResult = document.getElementById('matchResult');
     const gameContainer = document.getElementById('gameContainer');
-    const matchmakingView = document.getElementById('matchmakingView');
+    const matchmaking = document.getElementById('matchmaking');
+    const chatContainer = document.getElementById('chatContainer');
+    const toggleElementsChat = [
+        '#chat',
+        '#roomList',
+        '.invite-button',
+        '#addFriendModal',
+        '#chatContainer',
+        '.chat-container'
+    ];
+    const toggleElements = [
+        '#matchmakingView',
+        '#startMatchmaking',
+        '#matchStatus',
+        '#cancelMatchmaking'
+    ];
     if (!startBtn || !cancelBtn) {
         console.warn("Matchmaking buttons not found.");
         return;
@@ -33,19 +39,39 @@ export function initMatchmaking() {
         socket.onopen = () => {
             console.log('🔌 Connected to matchmaking');
         };
-        socket.onmessage = (event) => __awaiter(this, void 0, void 0, function* () {
+        socket.onmessage = async (event) => {
             const data = JSON.parse(event.data);
             if (data.type === 'start') {
                 console.log('🎮 Match found, starting game...');
                 matchResult.textContent = `✅ Match found! You are playing as ${data.role}`;
-                matchResult.classList.remove('hidden');
-                matchmakingView.classList.add('hidden');
-                const res = yield fetch('game.html');
-                const html = yield res.text();
+                // matchResult.classList.remove('hidden');
+                // matchmakingView.classList.add('hidden');
+                toggleElements.forEach((selector) => {
+                    const el = matchmaking?.querySelector(selector);
+                    if (el) {
+                        const isHidden = getComputedStyle(el).display === 'none';
+                        el.style.display = isHidden ? 'block' : 'none';
+                    }
+                });
+                toggleElementsChat.forEach((selector) => {
+                    const el = chatContainer?.querySelector(selector);
+                    if (el) {
+                        const isHidden = getComputedStyle(el).display === 'none';
+                        el.style.display = isHidden ? 'block' : 'none';
+                    }
+                });
+                const res = await fetch('game.html');
+                const html = await res.text();
                 gameContainer.innerHTML = html;
                 gameContainer.classList.remove('hidden');
+                const canvas = gameContainer.querySelector('#gameCanvas');
+                if (canvas) {
+                    const { default: initGame } = await import('./game.js');
+                    console.log("check2");
+                    initGame(canvas, socket);
+                }
             }
-        });
+        };
         socket.onerror = (err) => {
             console.error('WebSocket error:', err);
             statusText.textContent = '❌ WebSocket error. Try again.';
@@ -57,7 +83,7 @@ export function initMatchmaking() {
         };
     });
     cancelBtn.addEventListener('click', () => {
-        socket === null || socket === void 0 ? void 0 : socket.close();
+        socket?.close();
         statusText.textContent = 'Matchmaking cancelled.';
         resetUI();
     });
@@ -67,4 +93,5 @@ export function initMatchmaking() {
         matchResult.classList.add('hidden');
     }
 }
+initMatchmaking();
 //# sourceMappingURL=matchmaking.js.map
