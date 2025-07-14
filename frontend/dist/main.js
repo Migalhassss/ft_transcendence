@@ -6,6 +6,12 @@ navButtons.forEach((btn) => {
     btn.addEventListener('click', async () => {
         const target = btn.getAttribute('data-view');
         if (target === 'profile') {
+            const chat = document.getElementById('chat');
+            if (chat) {
+                if (!chat.classList.contains('hidden')) {
+                    chat.classList.toggle('hidden');
+                }
+            }
         }
         else if (target === 'matchmaking') {
             // Load matchmaking.html + matchmaking.js only once
@@ -29,6 +35,7 @@ navButtons.forEach((btn) => {
                     console.error('❌ Failed to load matchmaking.html or matchmaking.js:', err);
                 }
             }
+            const chat = document.getElementById('chat');
             // ✅ Toggle matchmaking sub-elements
             const toggleElements = [
                 '#matchmakingView',
@@ -66,6 +73,10 @@ navButtons.forEach((btn) => {
                 catch (err) {
                     console.error('Failed to load chat.html or chat.js', err);
                 }
+            }
+            const chat = document.getElementById('chat');
+            if (chat) {
+                chat.classList.toggle('hidden');
             }
             // Toggle visibility of chat sub-elements
             const toggleElements = [

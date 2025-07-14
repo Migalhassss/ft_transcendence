@@ -7,7 +7,14 @@ navButtons.forEach((btn) => {
   btn.addEventListener('click', async () => {
     const target = btn.getAttribute('data-view');
     if (target === 'profile'){
+      const chat = document.getElementById('chat');
 
+      if(chat)
+      {
+        if (!chat.classList.contains('hidden')) {
+          chat.classList.toggle('hidden');
+        }
+      }
     }
     else if (target === 'matchmaking') {
       // Load matchmaking.html + matchmaking.js only once
@@ -15,16 +22,16 @@ navButtons.forEach((btn) => {
         try {
           const res = await fetch('matchmaking.html');
           const html = await res.text();
-    
+          
           const tempDiv = document.createElement('div');
           tempDiv.innerHTML = html;
           tempDiv.querySelectorAll('script').forEach(script => script.remove());
-    
+          
           matchmaking.innerHTML = `<div class="inner-matchmaking">${tempDiv.innerHTML}</div>`;
           matchmaking.dataset.loaded = 'true';
-    
+          
           console.log("✅ Matchmaking HTML injected");
-    
+          
           const script = document.createElement('script');
           script.src = '/dist/matchmaking.js';
           script.type = 'module';
@@ -34,7 +41,8 @@ navButtons.forEach((btn) => {
           console.error('❌ Failed to load matchmaking.html or matchmaking.js:', err);
         }
       }
-    
+      const chat = document.getElementById('chat');
+
       // ✅ Toggle matchmaking sub-elements
       const toggleElements = [
         '#matchmakingView',
@@ -42,7 +50,7 @@ navButtons.forEach((btn) => {
         '#matchStatus',
         '#cancelMatchmaking'
       ];
-    
+      
       toggleElements.forEach((selector) => {
         const el = matchmaking?.querySelector(selector) as HTMLElement;
         if (el) {
@@ -50,7 +58,7 @@ navButtons.forEach((btn) => {
           el.style.display = isHidden ? 'block' : 'none';
         }
       });
-    
+      
       return; // Prevent default view-switch logic
     }    
     else if (target === 'chat') {
@@ -61,7 +69,7 @@ navButtons.forEach((btn) => {
           const html = await res.text();
           chatContainer.innerHTML = html;
           chatContainer.dataset.loaded = 'true';
-
+          
           const script = document.createElement('script');
           script.src = '/dist/chat.js';
           script.type = 'module'; 
@@ -69,19 +77,24 @@ navButtons.forEach((btn) => {
           document.body.appendChild(script);
           const hideElements = chatContainer.querySelectorAll(
             '#roomList, .invite-button, #addFriendModal, .chat-container'
-          );
-          hideElements.forEach((el) => {
-            (el as HTMLElement).style.display = 'none';
-          });
-        } catch (err) {
-          console.error('Failed to load chat.html or chat.js', err);
+            );
+            hideElements.forEach((el) => {
+              (el as HTMLElement).style.display = 'none';
+            });
+          } catch (err) {
+            console.error('Failed to load chat.html or chat.js', err);
+          }
         }
-      }
-      
-      
-      // Toggle visibility of chat sub-elements
-      const toggleElements = [
-        '#chat',
+        const chat = document.getElementById('chat');
+
+        if (chat) {
+          chat.classList.toggle('hidden');
+        }
+        
+        
+        // Toggle visibility of chat sub-elements
+        const toggleElements = [
+          '#chat',
         '#roomList',
         '.invite-button',
         '#addFriendModal',
