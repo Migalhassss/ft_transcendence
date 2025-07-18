@@ -2,9 +2,10 @@
 body {
     background-color: black; /* Tailwind's bg-gray-100 */
     font-family: sans-serif;
-    height: 100vh;
+    height: 100%;
     margin: 0;
-    display: flex;
+    overflow: hidden;
+    display: block;
   }
   
   /* Sidebar */
@@ -198,7 +199,8 @@ body {
     position: absolute;
     top: 60px;
     right: 20px;
-    background: white;
+    background-color: white;   /* explicitly white */
+    color: black;
     width: 300px;
     max-height: 400px;
     overflow-y: auto;
@@ -208,9 +210,11 @@ body {
     z-index: 50;
   }
 
-#notificationsPanel h2 {
+#notificationsPanel h1 {
   font-size: 1rem;
   font-weight: bold;
+  color: black;
+  background-color: white;
   margin-bottom: 0.5rem;
 }
 
@@ -304,4 +308,11 @@ body {
 #pongGameWrapper {
   width: 600px;
   height: 600px;
+  border: 2px solid white; /* Adjust thickness and color */
+  border-radius: 0.5rem; 
+}
+
+#friendMatch
+{
+  color: black;
 }

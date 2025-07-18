@@ -13,7 +13,7 @@ type friendsAndRooms = {
   currentRoom?: string;
 };
 
-const userSocketMap = new Map<string, WebSocket>();
+export const userSocketMap = new Map<string, WebSocket>();
 export const userChannels = new Map<WebSocket, friendsAndRooms>();
 
 // Optional: WebSocket type augmentation (if needed for TS)

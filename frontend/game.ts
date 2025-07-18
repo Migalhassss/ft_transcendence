@@ -34,7 +34,6 @@ export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
 
   socket.onopen = () => console.log("Connected to Pong server");
   socket.onerror = (error) => console.error("WebSocket error:", error);
-  socket.onclose = () => console.log("Disconnected from Pong server");
 
   socket.onmessage = (event: MessageEvent) => {
     try {
@@ -50,8 +49,8 @@ export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
           gameState = data;
           draw();
           break;
-        default:
-          console.log("Unknown message:", data);
+
+        // Notice no 'gameOver' case here — handled externally
       }
     } catch (err) {
       console.error("Invalid JSON from server:", event.data);
@@ -62,7 +61,7 @@ export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const scaleX = canvas.width / GAME_WIDTH;
     const scaleY = canvas.height / GAME_HEIGHT;
-  
+
     // Draw ball (red)
     ctx.fillStyle = 'red';
     ctx.beginPath();
@@ -74,7 +73,7 @@ export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
       Math.PI * 2
     );
     ctx.fill();
-  
+
     // Draw paddles (green)
     ctx.fillStyle = 'green';
     ctx.fillRect(
@@ -83,24 +82,23 @@ export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
       10 * scaleX,
       150 * scaleY
     );
-  
+
     ctx.fillRect(
       (GAME_WIDTH - 20) * scaleX,
       gameState.paddles.right * scaleY,
       10 * scaleX,
       150 * scaleY
     );
-  
+
     // Draw score (white)
     ctx.fillStyle = "white";
     ctx.font = `${20 * ((scaleX + scaleY) / 2)}px Arial`;
     ctx.fillText(`${gameState.scores.left}`, canvas.width / 3, 40);
     ctx.fillText(`${gameState.scores.right}`, (2 * canvas.width) / 3, 40);
-  }  
+  }
 
   // Optional cleanup you can return
   return () => {
-    socket.close();
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
   };

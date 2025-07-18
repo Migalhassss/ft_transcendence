@@ -28,7 +28,6 @@ export default function initGame(canvas, socket) {
     let gameState = null;
     socket.onopen = () => console.log("Connected to Pong server");
     socket.onerror = (error) => console.error("WebSocket error:", error);
-    socket.onclose = () => console.log("Disconnected from Pong server");
     socket.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
@@ -43,8 +42,7 @@ export default function initGame(canvas, socket) {
                     gameState = data;
                     draw();
                     break;
-                default:
-                    console.log("Unknown message:", data);
+                // Notice no 'gameOver' case here — handled externally
             }
         }
         catch (err) {
@@ -72,7 +70,6 @@ export default function initGame(canvas, socket) {
     }
     // Optional cleanup you can return
     return () => {
-        socket.close();
         window.removeEventListener("keydown", handleKeyDown);
         window.removeEventListener("keyup", handleKeyUp);
     };
