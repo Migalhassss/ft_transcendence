@@ -77,12 +77,26 @@ navButtons.forEach((btn) => {
             });
             return;
         }
-        // Default view switch
-        const targetView = document.getElementById(target);
-        if (targetView)
-            targetView.classList.remove('hidden');
-        const hideElements = chatContainer.querySelectorAll('#roomList, .invite-button, #addFriendModal, .chat-container, .saved-container');
-        hideElements.forEach((el) => el.style.display = 'none');
+        if (target === 'profile') {
+            const chat = document.getElementById('chat');
+            if (chat)
+                chat.classList.add('hidden');
+            const toggleElements = [
+                '#chat',
+                '#roomList',
+                '.invite-button',
+                '#addFriendModal',
+                '#chatContainer',
+                '.chat-container'
+            ];
+            toggleElements.forEach((selector) => {
+                const el = chatContainer.querySelector(selector);
+                if (el && getComputedStyle(el).display !== 'none') {
+                    el.style.display = 'none';
+                }
+            });
+            return;
+        }
     });
 });
 // 🔔 Notification toggle

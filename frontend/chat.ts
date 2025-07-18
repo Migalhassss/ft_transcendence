@@ -93,14 +93,15 @@ import { resetUI } from './matchmaking.js';
       appendMessage(msg.data.user, msg.data.text, Date.now());
     } else if (msg.event === 'previousMessages') {
       messagesDiv.innerHTML = '';
-      msg.data.forEach(({ user, text }: { user: string; text: string }) => {
+      msg.data.forEach(({ user, text, timestamp }: { user: string; text: string; timestamp: number }) => {
+        const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
         const el = document.createElement('div');
         el.className = 'message';
-        el.textContent = `${user}: ${text}`;
+        el.textContent = `[${timeStr}] ${user}: ${text}`;
         messagesDiv.appendChild(el);
       });
       messagesDiv.scrollTop = messagesDiv.scrollHeight;
-
     } else if (msg.event === 'userRooms') {
         const roomList = document.getElementById('roomList') as HTMLUListElement | null;
       if (!roomList) return;

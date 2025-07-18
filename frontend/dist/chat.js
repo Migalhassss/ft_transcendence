@@ -78,10 +78,11 @@ import { resetUI } from './matchmaking.js';
         }
         else if (msg.event === 'previousMessages') {
             messagesDiv.innerHTML = '';
-            msg.data.forEach(({ user, text }) => {
+            msg.data.forEach(({ user, text, timestamp }) => {
+                const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const el = document.createElement('div');
                 el.className = 'message';
-                el.textContent = `${user}: ${text}`;
+                el.textContent = `[${timeStr}] ${user}: ${text}`;
                 messagesDiv.appendChild(el);
             });
             messagesDiv.scrollTop = messagesDiv.scrollHeight;

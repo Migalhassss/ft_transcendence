@@ -1,4 +1,5 @@
 body {
+  overflow-x: hidden;
   font-family: Arial, sans-serif;
   background-color: #181818;
   color: #f1f1f1;
@@ -40,6 +41,9 @@ ul {
   display: flex;
   flex-direction: column;
   padding: 10px;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .messages {

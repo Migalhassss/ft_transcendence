@@ -105,8 +105,14 @@ function startGame(player1: Player, player2: Player) {
     // ✅ Game over logic (updated)
     if (gameState.scores.left >= WINNING_SCORE || gameState.scores.right >= WINNING_SCORE) {
       const winner = gameState.scores.left >= WINNING_SCORE ? 'left' : 'right';
-      const gameOverMessage = JSON.stringify({ type: 'gameOver', winner });
-
+      const winnerUsername = winner === 'left' ? player1.username : player2.username;
+    
+      const gameOverMessage = JSON.stringify({
+        type: 'gameOver',
+        winner,
+        winnerUsername
+      });
+    
       player1.socket.send(gameOverMessage);
       player2.socket.send(gameOverMessage);
 

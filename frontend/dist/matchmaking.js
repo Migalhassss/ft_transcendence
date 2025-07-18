@@ -36,7 +36,6 @@ export function initMatchmaking() {
             const data = JSON.parse(event.data);
             if (data.type === 'start') {
                 console.log('🎮 Match found, starting game...');
-                matchResult.textContent = `✅ Match found! You are playing as ${data.role}`;
                 toggleElements.forEach((selector) => {
                     const el = matchmaking?.querySelector(selector);
                     if (el) {
@@ -108,7 +107,6 @@ export function initMatchmaking() {
             const data = JSON.parse(event.data);
             if (data.type === 'start') {
                 console.log('🎮 Match found, starting game...');
-                matchResult.textContent = `✅ Match found! You are playing as ${data.role}`;
                 toggleElements.forEach((selector) => {
                     const el = matchmaking?.querySelector(selector);
                     if (el) {
@@ -131,19 +129,24 @@ export function initMatchmaking() {
             }
             else if (data.type === 'gameOver') {
                 console.log("message received");
-                alert(`🏆 Game Over! Winner: ${data.winner.toUpperCase()}`);
-                console.log("🏁 Game ended. Cleaning up...");
-                if (cleanup)
-                    cleanup();
-                socket?.close();
-                resetUI();
+                matchResult.textContent = `${data.winnerUsername} won! 🎉`;
+                matchResult.classList.remove('hidden');
+                console.log(data.winnerUsername);
+                resetUI(data.winnerUsername);
+                setTimeout(() => {
+                    if (cleanup)
+                        cleanup();
+                    socket?.close();
+                }, 5000);
             }
             else if (data.type === 'end') {
                 console.log("🏁 Game ended. Cleaning up...");
-                if (cleanup)
-                    cleanup();
-                socket?.close();
                 resetUI();
+                setTimeout(() => {
+                    if (cleanup)
+                        cleanup();
+                    socket?.close();
+                }, 5000);
             }
         });
         socket.onerror = (err) => {
@@ -164,12 +167,23 @@ export function initMatchmaking() {
         resetUI();
     });
 }
-export function resetUI() {
+export function resetUI(winnerUsername) {
     statusText.textContent = 'Click the button below to enter matchmaking.';
     startBtn.style.display = 'block';
     FriendInvite.style.display = 'block';
     gameContainer.classList.add('hidden');
-    matchResult.classList.remove('hidden');
+    if (winnerUsername) {
+        matchResult.textContent = `${winnerUsername} won!`;
+        matchResult.style.display = 'block';
+        console.log("there is a winner");
+        // Hide after 3 seconds
+        setTimeout(() => {
+            matchResult.style.display = 'none';
+        }, 8000);
+    }
+    else {
+        matchResult.style.display = 'none';
+    }
 }
 initMatchmaking();
 //# sourceMappingURL=matchmaking.js.map
