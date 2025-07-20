@@ -1,8 +1,10 @@
 import { addNotification } from './main.js';
+import { resetUI } from './matchmaking.js';
 (() => {
     const token = sessionStorage.getItem('authToken');
     let username = '';
     let currentRoom = 'general';
+    let cleanup = null; // Declare cleanup function outside
     function parseJwt(token) {
         try {
             const base64Url = token.split('.')[1];
@@ -23,7 +25,7 @@ import { addNotification } from './main.js';
         throw new Error('Token not found. Redirecting...');
     }
     const payload = parseJwt(token);
-    if (payload === null || payload === void 0 ? void 0 : payload.username) {
+    if (payload?.username) {
         username = payload.username;
         console.log('Logged in as:', username);
     }
@@ -76,10 +78,11 @@ import { addNotification } from './main.js';
         }
         else if (msg.event === 'previousMessages') {
             messagesDiv.innerHTML = '';
-            msg.data.forEach(({ user, text }) => {
+            msg.data.forEach(({ user, text, timestamp }) => {
+                const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 const el = document.createElement('div');
                 el.className = 'message';
-                el.textContent = `${user}: ${text}`;
+                el.textContent = `[${timeStr}] ${user}: ${text}`;
                 messagesDiv.appendChild(el);
             });
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -110,7 +113,6 @@ import { addNotification } from './main.js';
                     event: 'respondFriendInvite',
                     data: { from: msg.data.username, accepted: true }
                 }));
-                alert(`Friend added: ${msg.data.username}`);
             }, () => {
                 socket.send(JSON.stringify({
                     event: 'respondFriendInvite',
@@ -119,11 +121,86 @@ import { addNotification } from './main.js';
             });
         }
         else if (msg.event === 'addingFriend') {
-            alert("your friend request was accepted");
             addRoomOrFriend(`@${msg.data.username}`, true);
         }
         else if (msg.event === 'friendInviteDeclined') {
-            alert("your friend request was denied");
+        }
+        else if (msg.event === 'pongInvite') {
+            const fromUser = msg.data.from;
+            // Add a notification (like friend requests)
+            addNotification(`${fromUser} has invited you to a Pong game.`, async () => {
+                const token = sessionStorage.getItem('authToken');
+                if (!token) {
+                    alert("Auth token missing, can't join game.");
+                    return;
+                }
+                const pongSocket = new WebSocket(`ws://localhost:3000/game/pong?token=${token}`);
+                pongSocket.onopen = () => {
+                    console.log('Connected to Pong game server');
+                    pongSocket.send(JSON.stringify({ type: 'friendAccept' }));
+                };
+                pongSocket.addEventListener('message', async (event) => {
+                    const pongMsg = JSON.parse(event.data);
+                    if (pongMsg.type === 'start') {
+                        const gameContainer = document.getElementById('gameContainer');
+                        if (gameContainer) {
+                            document.getElementById('matchmakingView')?.classList.add('hidden');
+                            const startBtn = document.getElementById('startMatchmaking');
+                            const FriendInvite = document.getElementById('inviteFriend');
+                            FriendInvite.style.display = 'none';
+                            startBtn.style.display = 'none';
+                            const res = await fetch('game.html');
+                            const html = await res.text();
+                            gameContainer.innerHTML = html;
+                            gameContainer.classList.remove('hidden');
+                            const canvas = gameContainer.querySelector('#gameCanvas');
+                            console.log("here");
+                            if (canvas) {
+                                const { default: initGame } = await import('./game.js');
+                                console.log("hello");
+                                cleanup = initGame(canvas, pongSocket);
+                                console.log("hello");
+                            }
+                        }
+                    }
+                    else if (pongMsg.type === 'gameOver') {
+                        console.log("message received");
+                        alert(`🏆 Game Over! Winner: ${pongMsg.winner.toUpperCase()}`);
+                        console.log("🏁 Game ended. Cleaning up...");
+                        if (cleanup)
+                            cleanup();
+                        resetUI();
+                        pongSocket?.close();
+                    }
+                    else if (pongMsg.type === 'end') {
+                        console.log("🏁 Game ended. Cleaning up...");
+                        if (cleanup)
+                            cleanup();
+                        resetUI();
+                        pongSocket?.close();
+                    }
+                    else if (pongMsg.type === 'error') {
+                        alert(pongMsg.message);
+                        resetUI();
+                        pongSocket?.close();
+                    }
+                });
+                pongSocket.onerror = (err) => {
+                    console.error('Pong WebSocket error:', err);
+                    alert('Error connecting to Pong game.');
+                };
+                pongSocket.onclose = () => {
+                    console.log('Pong WebSocket closed');
+                };
+            }, () => {
+                // Decline pong game invite
+                socket.send(JSON.stringify({
+                    event: 'pongInviteResponse',
+                    data: { accepted: false, from: fromUser }
+                }));
+            });
+            // Simulate a direct message in the chat window
+            sendMessage(fromUser, `@${username}`, "has invited you to a Pong game. Check your notifications to accept or decline.");
         }
     };
     socket.onerror = (error) => {

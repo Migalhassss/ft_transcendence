@@ -1,96 +1,69 @@
-const canvas = document.createElement("canvas");
-document.body.style.margin = "0";
-document.body.style.overflow = "hidden";
-document.body.appendChild(canvas);
-
-const ctx = canvas.getContext("2d")!;
-
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  window.addEventListener("resize", resizeCanvas);
-  resizeCanvas(); // Set initial size
-  
-  // Replace with actual game dimensions (for scaling)
+export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
+  console.log("check");
+  const ctx = canvas.getContext("2d")!;
   const GAME_WIDTH = 600;
-  const GAME_HEIGHT = 400;
-  
+  const GAME_HEIGHT = 2000;
 
-// Get JWT token
-const token = localStorage.getItem("authToken");
-if (!token) {
-  alert("No auth token found. Please log in.");
-  throw new Error("Missing auth token");
-}
-
-// Connect to WebSocket backend
-const socket = new WebSocket(`ws://localhost:3000/game/pong?token=${token}`);
-
-// Movement input
-let currentDirection: 'up' | 'down' | 'stop' = 'stop';
-
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowUp") currentDirection = "up";
-  else if (e.key === "ArrowDown") currentDirection = "down";
-  else return;
-
-  socket.send(JSON.stringify({ type: "move", direction: currentDirection }));
-});
-
-document.addEventListener("keyup", () => {
-  currentDirection = "stop";
-  socket.send(JSON.stringify({ type: "move", direction: currentDirection }));
-});
-
-// WebSocket events
-socket.onopen = () => {
-  console.log("Connected to Pong server");
-};
-
-socket.onerror = (error) => {
-  console.error("WebSocket error:", error);
-};
-
-socket.onclose = () => {
-  console.log("Disconnected from Pong server");
-};
-
-// Game state + rendering
-let gameState: any = null;
-
-socket.onmessage = (event: MessageEvent) => {
-  try {
-    const data = JSON.parse(event.data);
-
-    switch (data.type) {
-      case "start":
-        console.log(`Game started as ${data.role}`);
-        break;
-      case "joined":
-        console.log(data.message);
-        break;
-      case "state":
-        gameState = data;
-        draw();
-        break;
-      default:
-        console.log("Unknown message:", data);
-    }
-  } catch (err) {
-    console.error("Invalid JSON from server:", event.data);
+  function resizeCanvas() {
+    canvas.width = canvas.parentElement?.clientWidth || window.innerWidth;
+    canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
   }
-};
 
-function draw() {
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
+
+  let currentDirection: 'up' | 'down' | 'stop' = 'stop';
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "ArrowUp") currentDirection = "up";
+    else if (e.key === "ArrowDown") currentDirection = "down";
+    else return;
+
+    socket.send(JSON.stringify({ type: "move", direction: currentDirection }));
+  };
+
+  const handleKeyUp = () => {
+    currentDirection = "stop";
+    socket.send(JSON.stringify({ type: "move", direction: currentDirection }));
+  };
+
+  window.addEventListener("keydown", handleKeyDown);
+  window.addEventListener("keyup", handleKeyUp);
+
+  let gameState: any = null;
+
+  socket.onopen = () => console.log("Connected to Pong server");
+  socket.onerror = (error) => console.error("WebSocket error:", error);
+
+  socket.onmessage = (event: MessageEvent) => {
+    try {
+      const data = JSON.parse(event.data);
+      switch (data.type) {
+        case "start":
+          console.log(`Game started as ${data.role}`);
+          break;
+        case "joined":
+          console.log(data.message);
+          break;
+        case "state":
+          gameState = data;
+          draw();
+          break;
+
+        // Notice no 'gameOver' case here — handled externally
+      }
+    } catch (err) {
+      console.error("Invalid JSON from server:", event.data);
+    }
+  };
+
+  function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     const scaleX = canvas.width / GAME_WIDTH;
     const scaleY = canvas.height / GAME_HEIGHT;
-    
-    ctx.fillStyle = "white";
-    
-    // Ball
+
+    // Draw ball (red)
+    ctx.fillStyle = 'red';
     ctx.beginPath();
     ctx.arc(
       gameState.ball.x * scaleX,
@@ -100,25 +73,33 @@ function draw() {
       Math.PI * 2
     );
     ctx.fill();
-    
-    // Paddles
+
+    // Draw paddles (green)
+    ctx.fillStyle = 'green';
     ctx.fillRect(
       10 * scaleX,
       gameState.paddles.left * scaleY,
       10 * scaleX,
-      80 * scaleY
+      150 * scaleY
     );
-    
+
     ctx.fillRect(
       (GAME_WIDTH - 20) * scaleX,
       gameState.paddles.right * scaleY,
       10 * scaleX,
-      80 * scaleY
+      150 * scaleY
     );
-    
-    // Score
+
+    // Draw score (white)
+    ctx.fillStyle = "white";
     ctx.font = `${20 * ((scaleX + scaleY) / 2)}px Arial`;
     ctx.fillText(`${gameState.scores.left}`, canvas.width / 3, 40);
     ctx.fillText(`${gameState.scores.right}`, (2 * canvas.width) / 3, 40);
-    
+  }
+
+  // Optional cleanup you can return
+  return () => {
+    window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("keyup", handleKeyUp);
+  };
 }

@@ -1,107 +1,127 @@
 const navButtons = document.querySelectorAll('.nav-btn');
 const views = document.querySelectorAll('.view');
-const chatContainer = document.getElementById('chatContainer');
+const chatContainer = document.getElementById('chatContainer')!;
+const matchmaking = document.getElementById('matchmaking')!;
 
+// Inject HTML and script once
+async function injectHTMLAndScript(container: HTMLElement, htmlPath: string, scriptPath: string, innerWrapperClass?: string) {
+  if (container.dataset.loaded) return;
+  try {
+    const res = await fetch(htmlPath);
+    const html = await res.text();
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    tempDiv.querySelectorAll('script').forEach(script => script.remove());
+    container.innerHTML = innerWrapperClass
+      ? `<div class="${innerWrapperClass}">${tempDiv.innerHTML}</div>`
+      : tempDiv.innerHTML;
+    container.dataset.loaded = 'true';
+
+    const script = document.createElement('script');
+    script.src = scriptPath;
+    script.type = 'module';
+    script.defer = true;
+    document.body.appendChild(script);
+
+    console.log(`✅ Injected ${htmlPath} and ${scriptPath}`);
+  } catch (err) {
+    console.error(`❌ Failed to load ${htmlPath} or ${scriptPath}:`, err);
+  }
+}
+
+// ✅ Preload everything at startup
+document.addEventListener('DOMContentLoaded', async () => {
+  await injectHTMLAndScript(matchmaking, 'matchmaking.html', '/dist/matchmaking.js', 'inner-matchmaking');
+  await injectHTMLAndScript(chatContainer, 'chat.html', '/dist/chat.js');
+
+  // Optionally: Hide elements initially
+  const chatHideEls = chatContainer.querySelectorAll('#roomList, .invite-button, #addFriendModal, .chat-container');
+  chatHideEls.forEach((el) => (el as HTMLElement).style.display = 'none');
+});
+
+// ✅ Handle nav clicks
 navButtons.forEach((btn) => {
-  btn.addEventListener('click', async () => {
+  btn.addEventListener('click', () => {
     const target = btn.getAttribute('data-view');
-    if (target === 'profile'){
 
-    }
-    else if (target === 'matchmaking'){
+    // Hide all views
+    views.forEach((view) => view.classList.add('hidden'));
 
-    }
-    else if (target === 'chat') {
-      // Load chat.html ONCE
-      if (chatContainer && !chatContainer.dataset.loaded) {
-        try {
-          const res = await fetch('chat.html');
-          const html = await res.text();
-          chatContainer.innerHTML = html;
-          chatContainer.dataset.loaded = 'true';
+    // Handle chat tab
+    if (target === 'chat') {
+      const chat = document.getElementById('chat');
+      if (chat) chat.classList.toggle('hidden');
 
-          const script = document.createElement('script');
-          script.src = '/dist/chat.js';
-          script.type = 'module'; 
-          script.defer = true;
-          document.body.appendChild(script);
-          const hideElements = chatContainer.querySelectorAll(
-            '#roomList, .invite-button, #addFriendModal, .chat-container'
-          );
-          hideElements.forEach((el) => {
-            (el as HTMLElement).style.display = 'none';
-          });
-        } catch (err) {
-          console.error('Failed to load chat.html or chat.js', err);
-        }
-      }
-
-      // Toggle visibility of chat sub-elements
       const toggleElements = [
+        '#chat',
         '#roomList',
         '.invite-button',
         '#addFriendModal',
         '#chatContainer',
         '.chat-container'
       ];
-
       toggleElements.forEach((selector) => {
-        const el = chatContainer?.querySelector(selector) as HTMLElement;
+        const el = chatContainer.querySelector(selector) as HTMLElement;
         if (el) {
           const isHidden = getComputedStyle(el).display === 'none';
           el.style.display = isHidden ? 'block' : 'none';
         }
       });
-
-      return; // Exit early — don't switch view like the others
+      return;
     }
 
-    // If not 'chat', switch views normally
-    views.forEach((view) => view.classList.add('hidden'));
-
-    const targetView = document.getElementById(target!);
-    if (targetView) {
-      targetView.classList.remove('hidden');
-    }
-
-    // Optional: hide chat UI when switching to other views
-    if (chatContainer) {
-      const hideElements = chatContainer.querySelectorAll(
-        '#roomList, .invite-button, #addFriendModal, .chat-container, .saved-container'
-      );
-      hideElements.forEach((el) => {
-        (el as HTMLElement).style.display = 'none';
+    // Handle matchmaking tab
+    if (target === 'matchmaking') {
+      const toggleElements = [
+        '#matchmakingView',
+      ];
+      toggleElements.forEach((selector) => {
+        const el = matchmaking.querySelector(selector) as HTMLElement;
+        if (el) {
+          const isHidden = getComputedStyle(el).display === 'none';
+          el.style.display = isHidden ? 'block' : 'none';
+        }
       });
+      return;
+    }
+    if (target === 'profile')
+    {
+      const chat = document.getElementById('chat');
+        if (chat) chat.classList.add('hidden');
+      const toggleElements = [
+        '#chat',
+        '#roomList',
+        '.invite-button',
+        '#addFriendModal',
+        '#chatContainer',
+        '.chat-container'
+      ];
+      toggleElements.forEach((selector) => {
+        const el = chatContainer.querySelector(selector) as HTMLElement | null;
+        if (el && getComputedStyle(el).display !== 'none') {
+          el.style.display = 'none';
+        }
+      });
+      return ;
     }
   });
 });
 
-// Get references to DOM elements
+// 🔔 Notification toggle
 const toggleBtn = document.getElementById('toggleNotifications') as HTMLButtonElement | null;
 const notificationPanel = document.getElementById('notificationsPanel') as HTMLElement | null;
 
-// Toggle logic for the 🔔 button
 toggleBtn?.addEventListener('click', () => {
-    if (!notificationPanel){
-        console.log("no notification Panel");
-        return;
-    }
-  
-    console.log("yo wassup");   
-    const isHidden = notificationPanel.style.display === 'none' || getComputedStyle(notificationPanel).display === 'none';
-    notificationPanel.style.display = isHidden ? 'block' : 'none';
-  
-    // Hide all other .view elements (but notificationPanel is NOT one of them)
-    const views = document.querySelectorAll('.view');
-    views.forEach((view) => view.classList.add('hidden'));
-  });
+  if (!notificationPanel) return;
+  const isHidden = notificationPanel.style.display === 'none' || getComputedStyle(notificationPanel).display === 'none';
+  notificationPanel.style.display = isHidden ? 'block' : 'none';
 
-// Add a notification to the list
+  views.forEach((view) => view.classList.add('hidden'));
+});
+
+// 🔔 Add notification
 export function addNotification(message: string, onAccept?: () => void, onDecline?: () => void) {
-  console.log("addNotification called with message:", message);
-
   const list = document.getElementById('notificationList') as HTMLUListElement | null;
-  console.log("notificationList exists:", list);
   if (!list) return;
 
   const li = document.createElement('li');
@@ -121,7 +141,7 @@ export function addNotification(message: string, onAccept?: () => void, onDeclin
       acceptBtn.className = 'bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded';
       acceptBtn.onclick = () => {
         onAccept();
-        li.remove(); // remove the notification
+        li.remove();
       };
       buttonContainer.appendChild(acceptBtn);
     }
@@ -132,7 +152,7 @@ export function addNotification(message: string, onAccept?: () => void, onDeclin
       declineBtn.className = 'bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded';
       declineBtn.onclick = () => {
         onDecline();
-        li.remove(); // remove the notification
+        li.remove();
       };
       buttonContainer.appendChild(declineBtn);
     }
@@ -141,21 +161,17 @@ export function addNotification(message: string, onAccept?: () => void, onDeclin
   }
 
   list.appendChild(li);
-  console.log("Notification appended:", li);
 }
 
-
-// Close notifications when clicking outside
+// 🔔 Close notification panel if clicking outside
 document.addEventListener('click', (event) => {
   if (!notificationPanel || !toggleBtn) return;
-
   const target = event.target as HTMLElement;
-
   if (
     !notificationPanel.contains(target) &&
     target !== toggleBtn &&
-    !notificationPanel.classList.contains('hidden')
+    getComputedStyle(notificationPanel).display !== 'none'
   ) {
-    notificationPanel.classList.add('hidden');
+    notificationPanel.style.display = 'none';
   }
 });

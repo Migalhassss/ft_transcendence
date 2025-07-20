@@ -1,12 +1,12 @@
 {
     "compilerOptions": {
-      "module": "ES6",
+      "module": "ESnext",
       "moduleResolution": "node",
-      "target": "ES6",
+      "target": "ES2020",
       "outDir": "./dist",
       "strict": true,
       "esModuleInterop": true,
       "sourceMap": true
     },
-    "include": ["main.ts", "game.ts", "chat.ts"]
+    "include": ["main.ts", "game.ts", "chat.ts", "matchmaking.ts"]
 }
