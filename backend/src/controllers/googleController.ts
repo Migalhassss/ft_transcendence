@@ -8,6 +8,7 @@ type User = {
   id: number
   username: string
   email: string
+  two_factor_secret?: string | null
 }
 
 export async function googleAuth(req: FastifyRequest, reply: FastifyReply) {
@@ -53,5 +54,7 @@ export async function googleAuth(req: FastifyRequest, reply: FastifyReply) {
     requires2FA: true,
   })
 
-  reply.send({ token, requires2FA: true })
+  const requires2FA = !!user.two_factor_secret
+
+  reply.send({ token, requires2FA })
 }

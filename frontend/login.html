@@ -1,4 +1,6 @@
 <!DOCTYPE html>
+<link rel="stylesheet" href="login.css">
+
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -45,10 +47,8 @@
   <script>
     let token = sessionStorage.getItem('authToken') || ''
 
-    // Se já existir token, podes exibir que está logado
     if (token) {
       document.getElementById('status').innerText = 'Já estás logado com token salvo.'
-      // Aqui podes eventualmente mostrar UI de logout ou perfil, etc.
     }
 
     async function handleCredentialResponse(response) {
@@ -67,8 +67,8 @@
 
       token = data.token
       data.requires2FA = true
-      sessionStorage.setItem('authToken', token)  // guarda token no sessionStorage
-      window.location.href = 'index.html';
+      sessionStorage.setItem('authToken', token)
+      // window.location.href = 'index.html';               <<<<<<<<-------------------------------------------------------- 
 
       document.getElementById('status').innerText = 'Login feito!'
 
@@ -121,6 +121,7 @@
         document.getElementById('twofa-result').style.color = 'green'
         document.getElementById('twofa-result').innerText = '2FA verificado com sucesso! Estás completamente logado.'
         document.getElementById('status').innerText = 'Login completo com 2FA!'
+        window.location.href = 'index.html';
       } else {
         document.getElementById('twofa-result').style.color = 'red'
         document.getElementById('twofa-result').innerText = data.error || 'Código inválido.'
