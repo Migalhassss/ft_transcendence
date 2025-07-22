@@ -17,6 +17,7 @@ interface GameState {
 }
 
 const waitingPlayers: Player[] = [];
+const WaitingPlayers2v2: Player[] = [];
 const connectedPlayers = new Map<string, Player>();
 const pendingFriendInvites = new Map<string, string>(); // invitedUsername -> inviterUsername
 

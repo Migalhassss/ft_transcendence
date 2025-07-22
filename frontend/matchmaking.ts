@@ -150,6 +150,10 @@ export function initMatchmaking() {
           cleanup = initGame(canvas, socket);
         }
       }
+      else if (data.type === 'start 2v2')
+      {
+        
+      }
       else if (data.type === 'gameOver') {
         console.log("message received");
         matchResult.textContent = `${data.winnerUsername} won! 🎉`;
