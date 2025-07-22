@@ -1,4 +1,5 @@
 const startBtn = document.getElementById('startMatchmaking');
+const startBtn2v2 = document.getElementById('startMatchmaking2v2');
 const cancelBtn = document.getElementById('cancelMatchmaking');
 const FriendInvite = document.getElementById('inviteFriend');
 // const FriendMatch = document.getElementById('FriendMatch')!;
@@ -13,7 +14,7 @@ export function initMatchmaking() {
     const toggleElements = [
         '#matchmakingView',
     ];
-    if (!startBtn || !cancelBtn) {
+    if (!startBtn2v2 || !startBtn || !cancelBtn) {
         console.warn("Matchmaking buttons not found.");
         return;
     }
@@ -88,6 +89,72 @@ export function initMatchmaking() {
             resetUI();
         };
     });
+    startBtn2v2.addEventListener('click', async () => {
+        const token = sessionStorage.getItem('authToken');
+        if (!token) {
+            alert('No auth token found');
+            return;
+        }
+        statusText.textContent = '🔍 Searching for 2v2 match...';
+        FriendInvite.style.display = 'none';
+        startBtn.style.display = 'none';
+        startBtn2v2.style.display = 'none';
+        cancelBtn.classList.remove('hidden');
+        socket = new WebSocket(`ws://localhost:3000/game/pong?token=${token}`);
+        socket.onopen = () => {
+            console.log('🔌 Connected to matchmaking (2v2)');
+            socket.send(JSON.stringify({ type: 'startMatchmaking2v2' }));
+        };
+        socket.addEventListener('message', async (event) => {
+            const data = JSON.parse(event.data);
+            if (data.type === 'start 2v2') {
+                console.log('🎮 2v2 Match found, starting game...');
+                toggleElements.forEach((selector) => {
+                    const el = matchmaking?.querySelector(selector);
+                    if (el) {
+                        const isHidden = getComputedStyle(el).display === 'none';
+                        el.style.display = isHidden ? 'block' : 'none';
+                    }
+                });
+                const res = await fetch('game.html');
+                const html = await res.text();
+                gameContainer.innerHTML = html;
+                gameContainer.classList.remove('hidden');
+                const canvas = document.getElementById('gameCanvas');
+                if (canvas) {
+                    const gameModule = await import('./game.js');
+                    cleanup = gameModule.initGame2v2(canvas, socket);
+                }
+            }
+            else if (data.type === 'gameOver') {
+                matchResult.textContent = `${data.winnerUsername} won! 🎉`;
+                matchResult.classList.remove('hidden');
+                resetUI(data.winnerUsername);
+                setTimeout(() => {
+                    if (cleanup)
+                        cleanup();
+                    socket?.close();
+                }, 5000);
+            }
+            else if (data.type === 'end') {
+                resetUI();
+                setTimeout(() => {
+                    if (cleanup)
+                        cleanup();
+                    socket?.close();
+                }, 5000);
+            }
+        });
+        socket.onerror = (err) => {
+            console.error('WebSocket error:', err);
+            statusText.textContent = '❌ WebSocket error. Try again.';
+            resetUI();
+        };
+        socket.onclose = () => {
+            console.log('🔌 WebSocket closed (2v2)');
+            resetUI();
+        };
+    });
     startBtn.addEventListener('click', async () => {
         const token = sessionStorage.getItem('authToken');
         if (!token) {
@@ -96,6 +163,7 @@ export function initMatchmaking() {
         }
         statusText.textContent = '🔍 Searching for a match...';
         FriendInvite.style.display = 'none';
+        startBtn2v2.style.display = 'none';
         startBtn.style.display = 'none';
         cancelBtn.classList.remove('hidden');
         socket = new WebSocket(`ws://localhost:3000/game/pong?token=${token}`);
@@ -169,8 +237,9 @@ export function initMatchmaking() {
 }
 export function resetUI(winnerUsername) {
     statusText.textContent = 'Click the button below to enter matchmaking.';
-    startBtn.style.display = 'block';
-    FriendInvite.style.display = 'block';
+    startBtn.style.display = 'inline-block';
+    startBtn2v2.style.display = 'inline-block';
+    FriendInvite.style.display = 'inline-block';
     gameContainer.classList.add('hidden');
     if (winnerUsername) {
         matchResult.textContent = `${winnerUsername} won!`;

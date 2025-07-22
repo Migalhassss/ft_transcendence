@@ -39,7 +39,7 @@ export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
     try {
       const data = JSON.parse(event.data);
       switch (data.type) {
-        case "start":
+        case "start 2v2":
           console.log(`Game started as ${data.role}`);
           break;
         case "joined":
@@ -105,7 +105,7 @@ export default function initGame(canvas: HTMLCanvasElement, socket: WebSocket) {
 }
 
 export function initGame2v2(canvas: HTMLCanvasElement, socket: WebSocket) {
-  console.log("check");
+  console.log("check1");
   const ctx = canvas.getContext("2d")!;
   const GAME_WIDTH = 600;
   const GAME_HEIGHT = 2000;
@@ -182,19 +182,13 @@ export function initGame2v2(canvas: HTMLCanvasElement, socket: WebSocket) {
 
     // Draw paddles (green)
     ctx.fillStyle = 'green';
-    ctx.fillRect(
-      10 * scaleX,
-      gameState.paddles.left * scaleY,
-      10 * scaleX,
-      150 * scaleY
-    );
 
-    ctx.fillRect(
-      (GAME_WIDTH - 20) * scaleX,
-      gameState.paddles.right * scaleY,
-      10 * scaleX,
-      150 * scaleY
-    );
+    ctx.fillRect(10 * scaleX, gameState.paddles.left1 * scaleY, 10 * scaleX, 150 * scaleY);
+    ctx.fillRect(10 * scaleX, gameState.paddles.left2 * scaleY, 10 * scaleX, 150 * scaleY);
+    
+    ctx.fillRect((GAME_WIDTH - 20) * scaleX, gameState.paddles.right1 * scaleY, 10 * scaleX, 150 * scaleY);
+    ctx.fillRect((GAME_WIDTH - 20) * scaleX, gameState.paddles.right2 * scaleY, 10 * scaleX, 150 * scaleY);
+    
 
     // Draw score (white)
     ctx.fillStyle = "white";
