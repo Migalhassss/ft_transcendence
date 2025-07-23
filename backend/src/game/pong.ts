@@ -10,6 +10,76 @@ type Player = {
   username: string;
 };
 
+type GameResult2v2 = {
+  teamLeft: [string, string];  // [player1, player2]
+  teamRight: [string, string];
+  scoreLeft: number;
+  scoreRight: number;
+  result: string; // e.g., 'normal win', 'disconnect win', 'teamRight won by disconnect'
+};
+
+
+type GameResult = {
+  player1: string;
+  player2: string;
+  P1result: number;
+  p2result: number;
+  Gameresult: string; // Only one result per game (e.g., 'normal win', 'disconnect win')
+};
+
+let gameOver = false;
+
+export const GameRecords2v2 = new Map<string, GameResult2v2[]>();
+export const GameRecords = new Map<string, GameResult[]>();
+
+export function recordGame2v2(
+  teamLeft: [string, string],
+  teamRight: [string, string],
+  scoreLeft: number,
+  scoreRight: number,
+  result: string
+) {
+  const game: GameResult2v2 = {
+    teamLeft,
+    teamRight,
+    scoreLeft,
+    scoreRight,
+    result
+  };
+
+  // Add to each player's history
+  [...teamLeft, ...teamRight].forEach(username => {
+    const history = GameRecords2v2.get(username) || [];
+    history.push(game);
+    GameRecords2v2.set(username, history);
+  });
+}
+
+export function recordGame(
+  player1: string,
+  player2: string,
+  P1result: number,
+  p2result: number,
+  result: string
+) {
+  const game: GameResult = {
+    player1,
+    player2,
+    P1result,
+    p2result,
+    Gameresult: result,
+  };
+
+  const p1History = GameRecords.get(player1) || [];
+  p1History.push(game);
+  GameRecords.set(player1, p1History);
+
+  const p2History = GameRecords.get(player2) || [];
+  p2History.push(game);
+  GameRecords.set(player2, p2History);
+}
+
+
 interface GameState {
   ball: { x: number; y: number; vx: number; vy: number };
   paddles: { [key: string]: number };
@@ -21,6 +91,7 @@ const waitingPlayers2v2: Player[] = [];
 const connectedPlayers = new Map<string, Player>();
 const pendingFriendInvites = new Map<string, string>();
 
+
 function resetBall(state: GameState, direction: 1 | -1) {
   state.ball.x = 300;
   state.ball.y = 1000;
@@ -30,6 +101,8 @@ function resetBall(state: GameState, direction: 1 | -1) {
 
 function startGame2v2([p1, p2, p3, p4]: Player[]) {
   const WINNING_SCORE = 5;
+  const gameOverFlag = { value: false };
+  let cleanedUp = false;
 
   const gameState = {
     ball: { x: 300, y: 1000, vx: 5, vy: 0 },
@@ -134,8 +207,18 @@ function startGame2v2([p1, p2, p3, p4]: Player[]) {
       });
 
       players.forEach(p => p.socket.send(gameOverMessage));
+
+      // Record the game
+      const teamLeft = players.filter(p => p.role.startsWith('left')).map(p => p.username) as [string, string];
+      const teamRight = players.filter(p => p.role.startsWith('right')).map(p => p.username) as [string, string];
+      
+      recordGame2v2(teamLeft, teamRight, gameState.scores.left, gameState.scores.right, 'normal win');
+
+      gameOverFlag.value = true;  // <-- mark game as ended normally
+      
       cleanup();
       return;
+      
     }
 
     const stateUpdate = JSON.stringify({
@@ -149,15 +232,37 @@ function startGame2v2([p1, p2, p3, p4]: Player[]) {
   }, 1000 / 30);
 
   // ✅ Cleanup logic
-  let cleanedUp = false;
+  cleanedUp = false;  // keep this outside cleanup so it persists
+
   function cleanup() {
     if (cleanedUp) return;
     cleanedUp = true;
+  
     clearInterval(interval);
+  
+    if (!gameOverFlag.value) {
+      // Find disconnected players
+      const disconnectedPlayers = players.filter(p => !p.socket || p.socket.readyState === 3);
+      const disconnectedUsernames = disconnectedPlayers.map(p => p.username);
+  
+      const teamLeft = players.filter(p => p.role.startsWith('left')).map(p => p.username) as [string, string];
+      const teamRight = players.filter(p => p.role.startsWith('right')).map(p => p.username) as [string, string];
+  
+      let result = 'disconnect win';
+      if (disconnectedUsernames.some(username => teamLeft.includes(username))) {
+        result = 'teamRight won by disconnect';
+      } else if (disconnectedUsernames.some(username => teamRight.includes(username))) {
+        result = 'teamLeft won by disconnect';
+      }
+  
+      recordGame2v2(teamLeft, teamRight, gameState.scores.left, gameState.scores.right, result);
+    }
+  
     players.forEach(({ socket }) => {
       try { socket.close(); } catch {}
     });
   }
+  
 
   // Bind cleanup on any socket close
   players.forEach(({ socket }) => {
@@ -249,6 +354,16 @@ function startGame(player1: Player, player2: Player) {
       player1.socket.send(gameOverMessage);
       player2.socket.send(gameOverMessage);
 
+      gameOver = true;
+
+      recordGame(
+        player1.username,
+        player2.username,
+        gameState.scores.left,
+        gameState.scores.right,
+        'normal win'
+      );
+
       clearInterval(interval);
       return;
     }
@@ -266,9 +381,30 @@ function startGame(player1: Player, player2: Player) {
 
   const cleanup = () => {
     clearInterval(interval);
-    try { player2.socket.close(); } catch {}
+  
+    if (!gameOver) {
+      const disconnectLoser = !player1.socket.readyState || player1.socket.readyState === 3
+        ? player1.username
+        : player2.username;
+  
+      const disconnectWinner = disconnectLoser === player1.username
+        ? player2.username
+        : player1.username;
+  
+      // Record a disconnect result
+      recordGame(
+        player1.username,
+        player2.username,
+        gameState.scores.left,
+        gameState.scores.right,
+        `${disconnectWinner} won by disconnect`
+      );
+    }
+  
     try { player1.socket.close(); } catch {}
+    try { player2.socket.close(); } catch {}
   };
+  
 
   player1.socket.on('close', cleanup);
   player2.socket.on('close', cleanup);

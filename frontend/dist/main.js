@@ -2,6 +2,22 @@ const navButtons = document.querySelectorAll('.nav-btn');
 const views = document.querySelectorAll('.view');
 const chatContainer = document.getElementById('chatContainer');
 const matchmaking = document.getElementById('matchmaking');
+const profileLayout = document.getElementById('profileLayout');
+function parseJwt(token) {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64)
+            .split('')
+            .map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
+            .join(''));
+        return JSON.parse(jsonPayload);
+    }
+    catch (e) {
+        console.error('Failed to parse token', e);
+        return null;
+    }
+}
 // Inject HTML and script once
 async function injectHTMLAndScript(container, htmlPath, scriptPath, innerWrapperClass) {
     if (container.dataset.loaded)
@@ -31,18 +47,24 @@ async function injectHTMLAndScript(container, htmlPath, scriptPath, innerWrapper
 document.addEventListener('DOMContentLoaded', async () => {
     await injectHTMLAndScript(matchmaking, 'matchmaking.html', '/dist/matchmaking.js', 'inner-matchmaking');
     await injectHTMLAndScript(chatContainer, 'chat.html', '/dist/chat.js');
+    document.getElementById('profile').style.display = 'none';
     // Optionally: Hide elements initially
     const chatHideEls = chatContainer.querySelectorAll('#roomList, .invite-button, #addFriendModal, .chat-container');
     chatHideEls.forEach((el) => el.style.display = 'none');
 });
 // ✅ Handle nav clicks
 navButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
         const target = btn.getAttribute('data-view');
         // Hide all views
         views.forEach((view) => view.classList.add('hidden'));
         // Handle chat tab
         if (target === 'chat') {
+            const profile = document.getElementById('profile');
+            if (profile) {
+                if (profile.style.display === 'block')
+                    profile.style.display = 'none';
+            }
             const chat = document.getElementById('chat');
             if (chat)
                 chat.classList.toggle('hidden');
@@ -95,6 +117,34 @@ navButtons.forEach((btn) => {
                     el.style.display = 'none';
                 }
             });
+            const profile = document.getElementById('profile');
+            if (profile && profile.style.display === 'none') {
+                profile.style.display = 'block';
+                // Inject profile layout & script only if not loaded
+                const wasLoaded = profileLayout.dataset.loaded;
+                await injectHTMLAndScript(profileLayout, 'profile.html', '/dist/profile.js');
+                // ✅ Only call loadFriends AFTER injection
+                if (wasLoaded) {
+                    // If already loaded, manually call loadFriends again
+                    const mod = await import('./profile.js');
+                    const token = sessionStorage.getItem('authToken');
+                    if (!token) {
+                        console.error('No token found in sessionStorage');
+                        return;
+                    }
+                    const payload = parseJwt(token);
+                    if (!payload || !payload.username) {
+                        console.error('Username not found in token payload');
+                        return;
+                    }
+                    const username = payload.username;
+                    // now call your function with username
+                    mod.loadFriendsAndMatchHistory?.(username); // Call it if it's exported
+                }
+            }
+            else if (profile) {
+                profile.style.display = 'none';
+            }
             return;
         }
     });

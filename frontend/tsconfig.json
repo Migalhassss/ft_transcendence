@@ -8,5 +8,5 @@
       "esModuleInterop": true,
       "sourceMap": true
     },
-    "include": ["main.ts", "game.ts", "chat.ts", "matchmaking.ts"]
+    "include": ["main.ts", "game.ts", "chat.ts", "matchmaking.ts", "profile.ts"]
 }

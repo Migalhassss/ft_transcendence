@@ -333,3 +333,94 @@ body {
 {
   color: black;
 }
+
+#profileLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+  border: 2px solid white;
+  background-color: rgb(152, 44, 44);
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.stats-section,
+.history-section {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+#profileheader {
+  background-color: #2c2c2c;
+  color: white;
+  gap: 1rem;
+  padding: 1.5rem;
+  font-size: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.box-title {
+  background-color: #2c2c2c;
+  color: white;
+  text-align: center;
+  font-weight: bold;
+  padding: 0.5rem;
+  border-radius: 6px 6px 0 0;
+  margin: -1rem -1rem 1rem -1rem;
+}
+
+#friendlist,
+#winloss,
+#matchhistory1v1,
+#matchhistory2v2 {
+  background-color: #2c2c2c;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  flex: 1;
+  min-height: 250px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#friendlist ul,
+#winloss ul,
+#matchhistory1v1 ul,
+#matchhistory2v2 ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+#friendlist li,
+#winloss li,
+#matchhistory1v1 li,
+#matchhistory2v2 li {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+#friendlist li:last-child,
+#winloss li:last-child,
+#matchhistory1v1 li:last-child,
+#matchhistory2v2 li:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 767px) {
+  .stats-section,
+  .history-section {
+    flex-direction: column;
+  }
+
+  #friendlist,
+  #winloss,
+  #matchhistory1v1,
+  #matchhistory2v2 {
+    min-height: 200px;
+    max-height: none;
+  }
+}

@@ -35,6 +35,7 @@ import { resetUI } from './matchmaking.js';
         throw new Error('Invalid token payload. Redirecting...');
     }
     const socket = new WebSocket(`ws://localhost:3000/ws/chat?token=${token}`);
+    window.chatSocket = socket;
     // DOM Elements
     const messagesDiv = document.getElementById('messages');
     const input = document.getElementById('messageInput');

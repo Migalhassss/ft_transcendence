@@ -2,6 +2,9 @@ import { FastifyPluginAsync } from 'fastify';
 import { fetchRoomMessages, handleIncomingMessage } from './chatService';
 import { saveMessage } from './messageStore';
 import { joinRoom, leaveRoom } from './messageStore';
+import { GameRecords2v2 } from '../game/pong';
+import { GameRecords } from '../game/pong';
+
 
 interface TokenPayload {
   username: string;
@@ -67,7 +70,38 @@ export const chatGateway: FastifyPluginAsync = async (fastify) => {
             }
             break;
           }
-
+          case 'getGameResults': {
+            const { username, gameType } = parsed.data;
+          
+            if (!username || !gameType) {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: 'Missing username or gameType in getGameResults'
+              }));
+              return;
+            }
+          
+            let results;
+          
+            if (gameType === '1v1') {
+              results = GameRecords.get(username) || [];
+            } else if (gameType === '2v2') {
+              results = GameRecords2v2.get(username) || [];
+            } else {
+              socket.send(JSON.stringify({
+                type: 'error',
+                message: 'Invalid gameType. Must be "1v1" or "2v2"'
+              }));
+              return;
+            }
+          
+            socket.send(JSON.stringify({
+              type: 'gameResults',
+              gameType,
+              results
+            }));
+            break;
+          }   
           case 'getPreviousMessages': {
             const roomName = parsed.data.room;
             const messages = fetchRoomMessages(roomName);

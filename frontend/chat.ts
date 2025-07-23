@@ -1,7 +1,13 @@
 import { addNotification } from './main.js';
 import { resetUI } from './matchmaking.js';
+declare global {
+  interface Window {
+    chatSocket: WebSocket;
+  }
+}
 
 (() => {
+  
   const token = sessionStorage.getItem('authToken');
   let username = '';
   let currentRoom: string = 'general';
@@ -40,6 +46,7 @@ import { resetUI } from './matchmaking.js';
   }
 
   const socket = new WebSocket(`ws://localhost:3000/ws/chat?token=${token}`);
+  (window as any).chatSocket = socket;
 
   // DOM Elements
   const messagesDiv = document.getElementById('messages') as HTMLDivElement | null;
