@@ -49,11 +49,14 @@ async function buildServer() {
   app.ready().then(() => {
     console.log(app.printRoutes());
   });
-
-  app.listen({ port: 3000 }, (err, address) => {
-      if (err) throw err                                        // server
-    console.log(`Servidor a correr em: ${address}`)
+  app.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
+  if (err) throw err
+  console.log(`Servidor a correr em: ${address}`)
   })
+  // app.listen({ port: 3000 }, (err, address) => {
+  //     if (err) throw err                                        // server
+  //   console.log(`Servidor a correr em: ${address}`)
+  // })
   
 }
 buildServer();
